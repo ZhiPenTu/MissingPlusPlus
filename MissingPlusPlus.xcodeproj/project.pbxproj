@@ -1,0 +1,473 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 63;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A0000001000000000000A001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0000004000000000000A001 /* Assets.xcassets */; };
+		A0000002000000000000A001 /* MenuBarIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = B0000005000000000000A001 /* MenuBarIcon.png */; };
+		A000001000000000000A001 /* MenuBarIcon-happy.png in Resources */ = {isa = PBXBuildFile; fileRef = B000001000000000000A001 /* MenuBarIcon-happy.png */; };
+		A000001100000000000A001 /* MenuBarIcon-joyful.png in Resources */ = {isa = PBXBuildFile; fileRef = B000001100000000000A001 /* MenuBarIcon-joyful.png */; };
+		A000001200000000000A001 /* MenuBarIcon-delighted.png in Resources */ = {isa = PBXBuildFile; fileRef = B000001200000000000A001 /* MenuBarIcon-delighted.png */; };
+		A000001300000000000A001 /* MenuBarIcon-sad.png in Resources */ = {isa = PBXBuildFile; fileRef = B000001300000000000A001 /* MenuBarIcon-sad.png */; };
+		A000001400000000000A001 /* MenuBarIcon-longing.png in Resources */ = {isa = PBXBuildFile; fileRef = B000001400000000000A001 /* MenuBarIcon-longing.png */; };
+		A000001500000000000A001 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B000001500000000000A001 /* StatisticsView.swift */; };
+		A000001600000000000A001 /* PopoverOverflowMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = B000001600000000000A001 /* PopoverOverflowMenu.swift */; };
+		A000001700000000000A001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B000001700000000000A001 /* SettingsView.swift */; };
+		A000002000000000000A001 /* AppIcon-happy.icns in Resources */ = {isa = PBXBuildFile; fileRef = B000002000000000000A001 /* AppIcon-happy.icns */; };
+		A000002100000000000A001 /* AppIcon-joyful.icns in Resources */ = {isa = PBXBuildFile; fileRef = B000002100000000000A001 /* AppIcon-joyful.icns */; };
+		A000002200000000000A001 /* AppIcon-delighted.icns in Resources */ = {isa = PBXBuildFile; fileRef = B000002200000000000A001 /* AppIcon-delighted.icns */; };
+		A000002300000000000A001 /* AppIcon-sad.icns in Resources */ = {isa = PBXBuildFile; fileRef = B000002300000000000A001 /* AppIcon-sad.icns */; };
+		A000002400000000000A001 /* AppIcon-longing.icns in Resources */ = {isa = PBXBuildFile; fileRef = B000002400000000000A001 /* AppIcon-longing.icns */; };
+		A1000001000000000000A001 /* MissingPlusPlusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001000000000000A001 /* MissingPlusPlusApp.swift */; };
+		A1000002000000000000A001 /* Missing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002000000000000A001 /* Missing.swift */; };
+		A1000003000000000000A001 /* Mood.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000003000000000000A001 /* Mood.swift */; };
+		A1000004000000000000A001 /* Intensity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000004000000000000A001 /* Intensity.swift */; };
+		A1000005000000000000A001 /* MissingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000005000000000000A001 /* MissingStore.swift */; };
+		A1000007000000000000A001 /* MenuBarContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000007000000000000A001 /* MenuBarContent.swift */; };
+		A1000008000000000000A001 /* NewMissingForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008000000000000A001 /* NewMissingForm.swift */; };
+		A1000010000000000000A001 /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000010000000000000A001 /* StorageService.swift */; };
+		A1000009000000000000A001 /* HistoryList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000009000000000000A001 /* HistoryList.swift */; };
+		A1000011000000000000A001 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000011000000000000A001 /* AppPreferences.swift */; };
+		A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A001 /* MenuBarIconRenderer.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B0000001000000000000A001 /* MissingPlusPlus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MissingPlusPlus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0000002000000000000A001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B0000003000000000000A001 /* MissingPlusPlus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MissingPlusPlus.entitlements; sourceTree = "<group>"; };
+		B0000004000000000000A001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B0000005000000000000A001 /* MenuBarIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MenuBarIcon.png; sourceTree = "<group>"; };
+		B000001000000000000A001 /* MenuBarIcon-happy.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "MenuBarIcon-happy.png"; sourceTree = "<group>"; };
+		B000001100000000000A001 /* MenuBarIcon-joyful.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "MenuBarIcon-joyful.png"; sourceTree = "<group>"; };
+		B000001200000000000A001 /* MenuBarIcon-delighted.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "MenuBarIcon-delighted.png"; sourceTree = "<group>"; };
+		B000001300000000000A001 /* MenuBarIcon-sad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "MenuBarIcon-sad.png"; sourceTree = "<group>"; };
+		B000001400000000000A001 /* MenuBarIcon-longing.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "MenuBarIcon-longing.png"; sourceTree = "<group>"; };
+		B000001500000000000A001 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
+		B000001600000000000A001 /* PopoverOverflowMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverOverflowMenu.swift; sourceTree = "<group>"; };
+		B000001700000000000A001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B000002000000000000A001 /* AppIcon-happy.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-happy.icns"; sourceTree = "<group>"; };
+		B000002100000000000A001 /* AppIcon-joyful.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-joyful.icns"; sourceTree = "<group>"; };
+		B000002200000000000A001 /* AppIcon-delighted.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-delighted.icns"; sourceTree = "<group>"; };
+		B000002300000000000A001 /* AppIcon-sad.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-sad.icns"; sourceTree = "<group>"; };
+		B000002400000000000A001 /* AppIcon-longing.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-longing.icns"; sourceTree = "<group>"; };
+		B1000001000000000000A001 /* MissingPlusPlusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingPlusPlusApp.swift; sourceTree = "<group>"; };
+		B1000002000000000000A001 /* Missing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Missing.swift; sourceTree = "<group>"; };
+		B1000003000000000000A001 /* Mood.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mood.swift; sourceTree = "<group>"; };
+		B1000004000000000000A001 /* Intensity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Intensity.swift; sourceTree = "<group>"; };
+		B1000005000000000000A001 /* MissingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingStore.swift; sourceTree = "<group>"; };
+		B1000007000000000000A001 /* MenuBarContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarContent.swift; sourceTree = "<group>"; };
+		B1000008000000000000A001 /* NewMissingForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMissingForm.swift; sourceTree = "<group>"; };
+		B1000010000000000000A001 /* StorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageService.swift; sourceTree = "<group>"; };
+		B1000009000000000000A001 /* HistoryList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryList.swift; sourceTree = "<group>"; };
+		B1000011000000000000A001 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
+		B1000012000000000000A001 /* MenuBarIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconRenderer.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C0000001000000000000A001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D0000001000000000000A001 = {
+			isa = PBXGroup;
+			children = (
+				D0000002000000000000A001 /* MissingPlusPlus */,
+				D0000003000000000000A001 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D0000002000000000000A001 /* MissingPlusPlus */ = {
+			isa = PBXGroup;
+			children = (
+				D0000007000000000000A001 /* Resources */,
+				B1000001000000000000A001 /* MissingPlusPlusApp.swift */,
+				D0000004000000000000A001 /* Models */,
+				D0000005000000000000A001 /* Services */,
+				D0000006000000000000A001 /* Views */,
+				B0000002000000000000A001 /* Info.plist */,
+				B0000003000000000000A001 /* MissingPlusPlus.entitlements */,
+			);
+			path = MissingPlusPlus;
+			sourceTree = "<group>";
+		};
+		D0000003000000000000A001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B0000001000000000000A001 /* MissingPlusPlus.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D0000004000000000000A001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B1000002000000000000A001 /* Missing.swift */,
+				B1000003000000000000A001 /* Mood.swift */,
+				B1000004000000000000A001 /* Intensity.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		D0000005000000000000A001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B1000005000000000000A001 /* MissingStore.swift */,
+				B1000010000000000000A001 /* StorageService.swift */,
+				B1000011000000000000A001 /* AppPreferences.swift */,
+				B1000012000000000000A001 /* MenuBarIconRenderer.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D0000006000000000000A001 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B000001500000000000A001 /* StatisticsView.swift */,
+				B000001600000000000A001 /* PopoverOverflowMenu.swift */,
+				B1000007000000000000A001 /* MenuBarContent.swift */,
+				B1000008000000000000A001 /* NewMissingForm.swift */,
+				B1000009000000000000A001 /* HistoryList.swift */,
+				B000001700000000000A001 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D0000007000000000000A001 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B000002000000000000A001 /* AppIcon-happy.icns */,
+				B000002100000000000A001 /* AppIcon-joyful.icns */,
+				B000002200000000000A001 /* AppIcon-delighted.icns */,
+				B000002300000000000A001 /* AppIcon-sad.icns */,
+				B000002400000000000A001 /* AppIcon-longing.icns */,
+				D000001000000000000A001 /* Assets.xcassets */,
+				B000001000000000000A001 /* MenuBarIcon-happy.png */,
+				B000001100000000000A001 /* MenuBarIcon-joyful.png */,
+				B000001200000000000A001 /* MenuBarIcon-delighted.png */,
+				B000001300000000000A001 /* MenuBarIcon-sad.png */,
+				B000001400000000000A001 /* MenuBarIcon-longing.png */,
+				B0000004000000000000A001 /* Assets.xcassets */,
+				B0000005000000000000A001 /* MenuBarIcon.png */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		D000001000000000000A001 /* Assets.xcassets */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Assets.xcassets;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E0000001000000000000A001 /* MissingPlusPlus */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0000002000000000000A001 /* Build configuration list for PBXNativeTarget "MissingPlusPlus" */;
+			buildPhases = (
+				G0000001000000000000A001 /* Sources */,
+				C0000001000000000000A001 /* Frameworks */,
+				G0000002000000000000A001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MissingPlusPlus;
+			productName = MissingPlusPlus;
+			productReference = B0000001000000000000A001 /* MissingPlusPlus.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		H0000001000000000000A001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					E0000001000000000000A001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = F0000001000000000000A001 /* Build configuration list for PBXProject "MissingPlusPlus" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D0000001000000000000A001;
+			minimizedProjectReferenceProxies = 1;
+			productRefGroup = D0000003000000000000A001 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E0000001000000000000A001 /* MissingPlusPlus */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		G0000002000000000000A001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0000001000000000000A001 /* Assets.xcassets in Resources */,
+				A0000002000000000000A001 /* MenuBarIcon.png in Resources */,
+				A000001000000000000A001 /* MenuBarIcon-happy.png in Resources */,
+				A000001100000000000A001 /* MenuBarIcon-joyful.png in Resources */,
+				A000001200000000000A001 /* MenuBarIcon-delighted.png in Resources */,
+				A000001300000000000A001 /* MenuBarIcon-sad.png in Resources */,
+				A000001400000000000A001 /* MenuBarIcon-longing.png in Resources */,
+				A000002000000000000A001 /* AppIcon-happy.icns in Resources */,
+				A000002100000000000A001 /* AppIcon-joyful.icns in Resources */,
+				A000002200000000000A001 /* AppIcon-delighted.icns in Resources */,
+				A000002300000000000A001 /* AppIcon-sad.icns in Resources */,
+				A000002400000000000A001 /* AppIcon-longing.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		G0000001000000000000A001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000001000000000000A001 /* MissingPlusPlusApp.swift in Sources */,
+				A1000002000000000000A001 /* Missing.swift in Sources */,
+				A1000003000000000000A001 /* Mood.swift in Sources */,
+				A1000004000000000000A001 /* Intensity.swift in Sources */,
+				A1000005000000000000A001 /* MissingStore.swift in Sources */,
+				A1000007000000000000A001 /* MenuBarContent.swift in Sources */,
+				A1000008000000000000A001 /* NewMissingForm.swift in Sources */,
+				A1000009000000000000A001 /* HistoryList.swift in Sources */,
+				A000001500000000000A001 /* StatisticsView.swift in Sources */,
+				A000001600000000000A001 /* PopoverOverflowMenu.swift in Sources */,
+				A000001700000000000A001 /* SettingsView.swift in Sources */,
+				A1000010000000000000A001 /* StorageService.swift in Sources */,
+				A1000011000000000000A001 /* AppPreferences.swift in Sources */,
+				A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		I0000001000000000000A001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		I0000002000000000000A001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		I0000003000000000000A001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MissingPlusPlus/MissingPlusPlus.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J79GWDGRCY;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MissingPlusPlus/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuzhipeng.MissingPlusPlus;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		I0000004000000000000A001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MissingPlusPlus/MissingPlusPlus.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J79GWDGRCY;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MissingPlusPlus/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuzhipeng.MissingPlusPlus;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F0000001000000000000A001 /* Build configuration list for PBXProject "MissingPlusPlus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I0000001000000000000A001 /* Debug */,
+				I0000002000000000000A001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0000002000000000000A001 /* Build configuration list for PBXNativeTarget "MissingPlusPlus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I0000003000000000000A001 /* Debug */,
+				I0000004000000000000A001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = H0000001000000000000A001 /* Project object */;
+}
