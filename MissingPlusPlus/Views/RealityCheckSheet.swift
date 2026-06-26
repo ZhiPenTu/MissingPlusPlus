@@ -12,6 +12,10 @@ struct RealityCheckSheet: View {
     @State private var evidenceAgainst: String = ""
     @State private var nextAction: String = ""
     @Environment(\.dismiss) private var dismiss
+    // v1.x self-soothing: 3 个 sub-button 触发对应 sub-sheet
+    @State private var pendingGrounding = false
+    @State private var pendingCompassion = false
+    @State private var pendingCooldown = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -53,9 +57,42 @@ struct RealityCheckSheet: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(canSave == false)
             }
+
+            // v1.x self-soothing: 3 sub-button 入口
+            HStack {
+                Text("想先做点别的？")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Button {
+                    pendingGrounding = true
+                } label: {
+                    Label("5-4-3-2-1", systemImage: "eye")
+                        .font(.caption2)
+                }
+                .buttonStyle(.borderless)
+                Button {
+                    pendingCompassion = true
+                } label: {
+                    Label("自我同情", systemImage: "heart.text.square")
+                        .font(.caption2)
+                }
+                .buttonStyle(.borderless)
+                Button {
+                    pendingCooldown = true
+                } label: {
+                    Label("分散", systemImage: "shuffle")
+                        .font(.caption2)
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding(.top, 4)
         }
         .padding(20)
         .frame(width: 420)
+        .sheet(isPresented: $pendingGrounding) { GroundingSheet() }
+        .sheet(isPresented: $pendingCompassion) { SelfCompassionView() }
+        .sheet(isPresented: $pendingCooldown) { CooldownSheet(prefs: AppPreferences.shared) }
     }
 
     private var canSave: Bool {
