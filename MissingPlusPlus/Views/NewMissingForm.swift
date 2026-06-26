@@ -11,6 +11,9 @@ struct NewMissingForm: View {
     /// v1.x anxious-attachment bundle: 当前选中的 trigger tags。空 = 没选。
     /// intensity 0/1 也允许选 —— 低强度想念也有 context。
     @State private var selectedTriggers: Set<TriggerTag> = []
+    /// Submit 后若 intensity == strong + setting 开，置这个 → 弹 sheet。
+    /// sheet dismiss 时 SwiftUI 自动把它设回 nil，下次提交新一条才再次触发。
+    @State private var pendingRealityCheck: Missing?
 
     private var trimmedWho: String {
         who.trimmingCharacters(in: .whitespaces)
@@ -57,10 +60,29 @@ struct NewMissingForm: View {
                 .background(Color(NSColor.windowBackgroundColor))
         }
         .background(Color(NSColor.windowBackgroundColor))
+        .sheet(item: $pendingRealityCheck) { record in
+            RealityCheckSheet(missing: record) { check in
+                store.attachRealityCheck(record, check: check)
+            } onSkip: {
+                // no-op — 用户主动跳过，无副作用
+            }
+        }
     }
 
     private var formFields: some View {
         VStack(alignment: .leading, spacing: 16) {
+            if let latest = store.sortedItems.first,
+               latest.resolvedAt == nil,
+               Date().timeIntervalSince(latest.createdAt) > 30 * 60,
+               AppPreferences.shared.autoPromptResolveLast
+            {
+                ResolveLastBanner(latest: latest) { response in
+                    switch response {
+                    case .yes: store.markResolved(latest)
+                    case .no, .skip: break
+                    }
+                }
+            }
             WhoField(who: $who, suggestions: store.knownWhos)
             VStack(alignment: .leading, spacing: 6) {
                 Text("心情")
@@ -202,6 +224,14 @@ struct NewMissingForm: View {
         )
         store.add(entry)
 
+        // v1.x: intensity == strong + setting 开 → 弹 RealityCheckSheet。
+        // 一旦弹了（pendingRealityCheck 被 set），sheet dismiss 时 SwiftUI
+        // 会把它设回 nil，下次提交新一条才再次触发（per-record 一次性）。
+        if entry.intensity == .strong,
+           AppPreferences.shared.autoPromptRealityCheck {
+            pendingRealityCheck = entry
+        }
+
         // Reset form for the next entry; keep the mood/intensity since
         // people usually log several in a row at the same emotional state.
         who = ""
@@ -268,5 +298,53 @@ private struct MoodPicker: View {
                 .help(mood.label)
             }
         }
+    }
+}
+
+
+// MARK: - 上次想念平复了吗 banner
+
+/// 30 分钟 grace period 避免"刚提交就被问"。3 按钮: 是(stamp)/否(保持)/跳过。
+private struct ResolveLastBanner: View {
+    enum Response { case yes, no, skip }
+    let latest: Missing
+    let onResponse: (Response) -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("上次想念平复了吗？")
+                    .font(.subheadline.weight(.medium))
+                Text("对象：\(latest.who) · \(formatRelative(latest.createdAt))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            VStack(spacing: 4) {
+                Button("是") { onResponse(.yes) }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .tint(.pink)
+                Button("否") { onResponse(.no) }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                Button("跳过") { onResponse(.skip) }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.pink.opacity(0.06))
+        )
+    }
+
+    private func formatRelative(_ date: Date) -> String {
+        let interval = Date().timeIntervalSince(date)
+        if interval < 60 { return "刚刚" }
+        if interval < 3600 { return "\(Int(interval / 60)) 分钟前" }
+        if interval < 86400 { return "\(Int(interval / 3600)) 小时前" }
+        return "\(Int(interval / 86400)) 天前"
     }
 }
