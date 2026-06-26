@@ -3,6 +3,8 @@ import SwiftUI
 struct HistoryList: View {
     @ObservedObject var store: MissingStore
     @State private var query: String = ""
+    /// v1.x layout: limit 20 records by default + "load more" 展开
+    @State private var showingAll: Bool = false
     /// v1.x: 点击卡片底部"做现实检验"按钮 → 弹这个 sheet（per-card 一次性）
     @State private var pendingRealityCheck: Missing?
     /// v1.x self-soothing: 3 个 sub-sheet 入口
@@ -12,13 +14,55 @@ struct HistoryList: View {
 
     private var filtered: [Missing] {
         let q = query.trimmingCharacters(in: .whitespaces)
+        let cap = showingAll ? 100 : 20
         if q.isEmpty {
-            return Array(store.sortedItems.prefix(50))
+            return Array(store.sortedItems.prefix(cap))
         }
         return store.sortedItems
             .filter { $0.who.localizedCaseInsensitiveContains(q) }
-            .prefix(50)
+            .prefix(cap)
             .map { $0 }
+    }
+
+    /// 把 filtered 按日期分桶（今天 / 昨天 / 本周 / 本月 / 更早），展平成 HistoryListItem 列表。
+    private var sectioned: [HistoryListItem] {
+        let cal = Calendar.current
+        let now = Date()
+        let today = cal.startOfDay(for: now)
+        let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+        let weekStart = cal.date(byAdding: .day, value: -7, to: today)!
+        let monthStart = cal.date(byAdding: .day, value: -30, to: today)!
+
+        var result: [HistoryListItem] = []
+        var lastBucket: DateBucket? = nil
+
+        for item in filtered {
+            let day = cal.startOfDay(for: item.createdAt)
+            let bucket: DateBucket
+            if day == today { bucket = .today }
+            else if day == yesterday { bucket = .yesterday }
+            else if day >= weekStart { bucket = .thisWeek }
+            else if day >= monthStart { bucket = .thisMonth }
+            else { bucket = .earlier }
+
+            if bucket != lastBucket {
+                result.append(.header(bucket.label))
+                lastBucket = bucket
+            }
+            result.append(.row(item))
+        }
+        return result
+    }
+
+    /// v1.x layout: 是否还有更多（超过当前 cap）
+    private var hasMore: Bool {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        if q.isEmpty {
+            return store.sortedItems.count > filtered.count
+        } else {
+            let allMatches = store.sortedItems.filter { $0.who.localizedCaseInsensitiveContains(q) }
+            return allMatches.count > filtered.count
+        }
     }
 
     var body: some View {
@@ -65,16 +109,46 @@ struct HistoryList: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(filtered) { item in
-                            HistoryRow(
-                                item: item,
-                                onResolve: { store.markResolved(item) },
-                                onRequestCheck: { pendingRealityCheck = item },
-                                onRequestGrounding: { pendingGrounding = item },
-                                onRequestCompassion: { pendingCompassion = item },
-                                onRequestCooldown: { pendingCooldown = item }
-                            )
-                            Divider().padding(.leading, 40)
+                        ForEach(sectioned, id: \.id) { item in
+                            switch item {
+                            case .header(let label):
+                                HStack {
+                                    Text(label)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.top, 12)
+                                .padding(.bottom, 4)
+                            case .row(let missing):
+                                HistoryRow(
+                                    item: missing,
+                                    onResolve: { store.markResolved(missing) },
+                                    onRequestCheck: { pendingRealityCheck = missing },
+                                    onRequestGrounding: { pendingGrounding = missing },
+                                    onRequestCompassion: { pendingCompassion = missing },
+                                    onRequestCooldown: { pendingCooldown = missing }
+                                )
+                                Divider().padding(.leading, 40)
+                            }
+                        }
+                        if hasMore && !showingAll {
+                            Button {
+                                withAnimation { showingAll = true }
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    Text("加载更多…")
+                                        .font(.caption)
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption2)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 12)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundColor(.accentColor)
                         }
                     }
                 }
@@ -258,5 +332,31 @@ private struct HistoryRow: View {
         formatter.unitsStyle = .short
         formatter.locale = Locale(identifier: "zh_CN")
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+/// v1.x layout: flat list item for date-grouped history view.
+enum HistoryListItem: Identifiable {
+    case header(String)
+    case row(Missing)
+    var id: String {
+        switch self {
+        case .header(let label): return "h-\(label)"
+        case .row(let m): return "r-\(m.id.uuidString)"
+        }
+    }
+}
+
+/// v1.x layout: date buckets for grouping.
+enum DateBucket: String, Hashable {
+    case today, yesterday, thisWeek, thisMonth, earlier
+    var label: String {
+        switch self {
+        case .today:     return "今天"
+        case .yesterday: return "昨天"
+        case .thisWeek:  return "本周"
+        case .thisMonth: return "本月"
+        case .earlier:   return "更早"
+        }
     }
 }
