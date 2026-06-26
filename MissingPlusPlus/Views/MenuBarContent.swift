@@ -60,7 +60,8 @@ struct MenuBarContent: View {
                     Text(item.rawValue)
                         .font(.subheadline)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
                         .background(
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(tab == item ? Color.pink.opacity(0.18) : Color.clear)
