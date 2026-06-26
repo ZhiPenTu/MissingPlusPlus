@@ -123,29 +123,25 @@ private struct HistoryRow: View {
                 .font(.title3)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 3) {
-                HStack {
-                    HStack(spacing: 4) {
-                        Text(item.who)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        Text("·")
-                            .foregroundColor(.secondary)
-                        Text(item.intensity.label)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    resolvedButton
-                }
-                triggerChips
-                realityCheckSection
-                HStack(spacing: 10) {
+                // Row 1: who · intensity · time  +  [resolved] [4 icon buttons]
+                HStack(spacing: 4) {
+                    Text(item.who)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                    Text("·")
+                        .foregroundColor(.secondary)
+                    Text(item.intensity.label)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("·")
+                        .foregroundColor(.secondary)
                     Text(relativeTime(item.createdAt))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
-                    Spacer()
-                    // v1.x: 4 个 icon-only sub-button（per-card 手动，hover tooltip 显示 label）
+                    Spacer(minLength: 4)
+                    resolvedButton
                     if item.realityCheck == nil {
                         Button(action: onRequestCheck) {
                             Image(systemName: "checkmark.bubble")
@@ -177,6 +173,8 @@ private struct HistoryRow: View {
                     .foregroundColor(.purple)
                     .help("分散注意力")
                 }
+                triggerChips
+                realityCheckSection
             }
         }
         .padding(.horizontal, 12)
