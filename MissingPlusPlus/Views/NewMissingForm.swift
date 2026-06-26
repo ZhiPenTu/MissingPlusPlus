@@ -2,14 +2,15 @@ import SwiftUI
 
 struct NewMissingForm: View {
     @ObservedObject var store: MissingStore
-    // 这个组件只服务主窗口 (MenuBarContent 的 "新建" tab)。
-    // popover 用自己的 PopoverContent + inline form — 不复用此组件，
-    // 因为主窗口后续可能加更多功能 (扩展点), popover 保持快录紧凑
-    // 不受主窗口改动影响。
+    // 服务主窗口 "新建" tab (MenuBarContent) — 状态栏 1-click 记录
+    // 走 AppDelegate.buildStatusMenu 里的 NSMenu，不复用本组件。
     @State private var who: String = ""
     @State private var mood: Mood = .happy
     @State private var intensity: Intensity = .mild
     @State private var isSubmitting = false
+    /// v1.x anxious-attachment bundle: 当前选中的 trigger tags。空 = 没选。
+    /// intensity 0/1 也允许选 —— 低强度想念也有 context。
+    @State private var selectedTriggers: Set<TriggerTag> = []
 
     private var trimmedWho: String {
         who.trimmingCharacters(in: .whitespaces)
@@ -78,6 +79,50 @@ struct NewMissingForm: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+            }
+            triggerPickerView
+        }
+    }
+
+    /// 8 个 attachment 场景 chip picker，多选，可不选。
+    /// 1 行 4 个，2 行排开；3 列 + 1 列的 fallback 通过 LazyVGrid 自动 wrap。
+    private var triggerPickerView: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("触发（多选，可不选）")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
+                ForEach(TriggerTag.allCases) { tag in
+                    Button {
+                        if selectedTriggers.contains(tag) {
+                            selectedTriggers.remove(tag)
+                        } else {
+                            selectedTriggers.insert(tag)
+                        }
+                    } label: {
+                        Text(tag.displayString)
+                            .font(.caption)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(selectedTriggers.contains(tag)
+                                          ? Color.pink.opacity(0.18)
+                                          : Color.gray.opacity(0.08))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(selectedTriggers.contains(tag)
+                                            ? Color.pink.opacity(0.6)
+                                            : Color.clear, lineWidth: 1)
+                            )
+                            .foregroundColor(.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }
@@ -152,7 +197,8 @@ struct NewMissingForm: View {
         let entry = Missing(
             who: trimmedWho.isEmpty ? "TA" : trimmedWho,
             mood: mood,
-            intensity: intensity
+            intensity: intensity,
+            triggerTags: Array(selectedTriggers).sorted { $0.rawValue < $1.rawValue }
         )
         store.add(entry)
 
@@ -161,6 +207,7 @@ struct NewMissingForm: View {
         who = ""
         mood = .happy
         intensity = .mild
+        selectedTriggers = []
         isSubmitting = false
     }
 }
