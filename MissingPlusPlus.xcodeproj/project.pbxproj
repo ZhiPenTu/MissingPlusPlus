@@ -34,6 +34,7 @@
 		A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A001 /* MenuBarIconRenderer.swift */; };
 		A1000012000000000000A002 /* TriggerTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A002 /* TriggerTag.swift */; };
 		A1000012000000000000A003 /* RealityCheckSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A003 /* RealityCheckSheet.swift */; };
+		A1000012000000000000A004 /* CooldownActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A004 /* CooldownActivities.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +68,7 @@
 		B1000012000000000000A001 /* MenuBarIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconRenderer.swift; sourceTree = "<group>"; };
 		B1000012000000000000A002 /* TriggerTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriggerTag.swift; sourceTree = "<group>"; };
 		B1000012000000000000A003 /* RealityCheckSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealityCheckSheet.swift; sourceTree = "<group>"; };
+		B1000012000000000000A004 /* CooldownActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CooldownActivities.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -117,6 +119,7 @@
 				B1000003000000000000A001 /* Mood.swift */,
 				B1000004000000000000A001 /* Intensity.swift */,
 			B1000012000000000000A002 /* TriggerTag.swift */,
+			B1000012000000000000A004 /* CooldownActivities.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -268,6 +271,7 @@
 				A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */,
 			A1000012000000000000A002 /* TriggerTag.swift in Sources */,
 			A1000012000000000000A003 /* RealityCheckSheet.swift in Sources */,
+			A1000012000000000000A004 /* CooldownActivities.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
