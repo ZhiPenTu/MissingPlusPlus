@@ -13,8 +13,10 @@ import AppKit
 /// 分支内部都用 lockFocus + 画图/文字，输出一致。
 @MainActor
 enum MenuBarIconRenderer {
-    /// 标准 22x22pt — 匹配 NSStatusBar.squareLength。
-    static let iconSize = NSSize(width: 22, height: 22)
+    /// 18x18pt — system status bar item 实际 icon 渲染区域
+    /// (NSStatusBar.squareLength=22pt cell 减 2pt 上/下 padding)。
+    /// 用 NSPanel 路线后这里跟 panel 内部 view 18x18 frame 对齐。
+    static let iconSize = NSSize(width: 18, height: 18)
 
     // MARK: - 旧接口 (apply 到 NSStatusBarButton) — 留作 fallback / 单测
     // NSStatusItem 路线如果将来要回来用，可以直接调用。MenuBarExtra 路线
@@ -80,15 +82,10 @@ enum MenuBarIconRenderer {
         }
         let color = nsColor(for: mood)
         color.set()
-        // 居中放置
-        let baseSize = base.size
-        let drawRect = NSRect(
-            x: (rect.width - baseSize.width) / 2,
-            y: (rect.height - baseSize.height) / 2,
-            width: baseSize.width,
-            height: baseSize.height
-        )
-        base.draw(in: drawRect, from: NSRect(origin: .zero, size: baseSize),
+        // 把 SF Symbol 缩放到 iconSize (18x18) — 不用 base.size (默认 51x51
+        // 会让 heart 看起来比 system status bar icon 大很多)
+        base.size = iconSize
+        base.draw(in: rect, from: NSRect(origin: .zero, size: iconSize),
                   operation: .sourceOver, fraction: 1.0)
         rect.fill(using: .sourceAtop)
     }

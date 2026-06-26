@@ -304,26 +304,3 @@ struct PopoverContent: View {
 }
 
 
-
-/// 菜单栏 app 状态栏 item 的 SwiftUI label — 给 `MenuBarExtra(content:label:)`
-/// 用 (C 方案)。
-///
-/// 行为：
-/// - `prefs.showStatusItem == false` → 完全不渲染（不占菜单栏位，hit area
-///   也没有；用户主动关掉后，"打开 popover" 只能走 Dock / ⌥M / ⌘, 三条路）
-/// - `prefs.showStatusItem == true` → 调 `MenuBarIconRenderer.image` 拿到
-///   当前 mood + style 对应的 NSImage，包成 SwiftUI `Image` 给 MenuBarExtra
-///
-/// Mood 联动是 SwiftUI 声明式的：prefs / store 变化 → view 自动 re-render，
-/// 不需要 NotificationCenter 手动 push（这跟旧 NSStatusItem 路线最大的区别）。
-struct StatusBarIcon: View {
-    @ObservedObject var store: MissingStore
-    @ObservedObject var prefs: AppPreferences
-
-    var body: some View {
-        if prefs.showStatusItem {
-            let latestMood = store.sortedItems.first?.mood
-            Image(nsImage: MenuBarIconRenderer.image(mood: latestMood, style: prefs.menuBarIconStyle))
-        }
-    }
-}

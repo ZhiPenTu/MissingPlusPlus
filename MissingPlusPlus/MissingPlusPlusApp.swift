@@ -3,20 +3,13 @@ import AppKit
 import Carbon
 import UserNotifications
 
-/// 标准的 macOS 菜单栏 app 入口 — **C 方案**（SwiftUI `MenuBarExtra`）。
+/// 菜单栏 app 入口。
 ///
-/// 之前用 AppDelegate + NSStatusBar（AGENTS.md §14-§19），macOS 26 把
-/// NSStatusItem 默认放到 (0, 0) — 被 Apple menu 遮住。`autosaveName`
-/// + Cmd+drag 是 workaround，但用户体验差。
-///
-/// C 方案改用 SwiftUI `MenuBarExtra(content:label:)`（macOS 13+ 推荐）。
-/// `label` 闭包接受自定义 SwiftUI view，mood 联动用 `@ObservedObject`
-/// 声明式实现 — 不用 NotificationCenter 手动 push，prefs / store 变化
-/// 自动 re-render。SwiftUI App framework 帮我们处理 status item 的
-/// 生命周期 + 定位 + click → popover。
-///
-/// AppDelegate 还留着（不是 @main）做：
-/// - Dock 点击 (`applicationShouldHandleReopen` → `showMainWindow`)
+/// AppDelegate 负责：
+/// - 自定义 NSPanel 浮动 status item（macOS 26 上 NSStatusItem 默认进
+///   Control Center 弹窗辅助区，屏幕顶部菜单栏看不到 — 改用 NSPanel 自己画）
+/// - NSPopover toggle（panel 点击）
+/// - Dock 点击（`applicationShouldHandleReopen` → showMainWindow）
 /// - ⌥M 全局热键（Carbon `EventHotKey`）
 /// - 通知（`UNUserNotificationCenter`）
 /// - 主窗口 / 设置窗口的生命周期
@@ -28,24 +21,11 @@ struct MissingPlusPlusApp: App {
     @StateObject private var storage = StorageService.shared
 
     var body: some Scene {
-        MenuBarExtra {
-            // popover 内容（被点击时显示）
-            PopoverContent(
-                store: store,
-                onOpenMainWindow: { appDelegate.showMainWindow() }
-            )
-        } label: {
-            // 菜单栏 item 的图标（SwiftUI 声明式 — mood 联动自动 re-render）
-            StatusBarIcon(store: store, prefs: prefs)
-        }
-        .menuBarExtraStyle(.window)   // popover 风格（vs .menu）
-
         Settings {
             SettingsView(store: store, storage: storage, prefs: prefs)
         }
 
         .commands {
-            // App 菜单（关于/退出）— SwiftUI 替代了原来的 installAppMenu NSMenu 装法
             CommandGroup(replacing: .appInfo) {
                 Button("关于 Missing++") {
                     NSApp.orderFrontStandardAboutPanel(nil)
@@ -61,28 +41,125 @@ struct MissingPlusPlusApp: App {
     }
 }
 
-/// 留 AppDelegate 跑 Dock 点击 / ⌥M / 通知 / 窗口管理。
-/// 不再持有 NSStatusItem（MenuBarExtra 接管）— NSStatusItem 的位置 bug
-/// 在 macOS 26 + `LSUIElement` 各种组合下都跑不通，C 方案绕过它。
+// MARK: - Floating Status Panel
+//
+// macOS 26 上 NSStatusItem 默认进 Control Center 弹窗辅助区，屏幕顶部
+// 菜单栏看不到 — 不管 .regular / .accessory / autosaveName / Visible Item-N
+// 怎么设都不行。绕开 NSStatusItem 路线，直接用 NSPanel 在屏幕顶部右侧画
+// 一个浮动 button：level = .statusBar（盖在 system status bar 之上）、
+// nonactivatingPanel（不抢焦点）、canJoinAllSpaces（全屏也能看到）。
+//
+// 渲染走 MenuBarIconRenderer（heart / emoji / 思字 三种 style + 5 mood 染色），
+// mood 联动通过重新 setIcon 实现。
+
+final class StatusItemView: NSView {
+    weak var clickTarget: AnyObject?
+    var clickSelector: Selector?
+    private let imageView = NSImageView()
+    private var dragStartLocation: NSPoint = .zero
+    /// 拖动时把 panel 的 x origin 写到这里（popover 关闭时再持久化）
+    var onDragEnd: (() -> Void)?
+    /// 拖动超过这个距离才算 drag，避免跟 click 冲突
+    private let dragThreshold: CGFloat = 4
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        imageView.frame = bounds
+        imageView.autoresizingMask = [.width, .height]
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.imageAlignment = .alignCenter
+        addSubview(imageView)
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    func setIcon(_ image: NSImage) {
+        imageView.image = image
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        dragStartLocation = event.locationInWindow
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let window = self.window else { return }
+        let current = event.locationInWindow
+        let dx = current.x - dragStartLocation.x
+        // 只在超过 threshold 时才算 drag，避免 click 误触
+        if abs(current.x - dragStartLocation.x) < dragThreshold &&
+           abs(current.y - dragStartLocation.y) < dragThreshold {
+            return
+        }
+        let newOrigin = NSPoint(
+            x: window.frame.origin.x + dx,
+            y: window.frame.origin.y
+        )
+        window.setFrameOrigin(newOrigin)
+        dragStartLocation = current
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let moved = abs(event.locationInWindow.x - dragStartLocation.x) +
+                    abs(event.locationInWindow.y - dragStartLocation.y)
+        if moved < dragThreshold {
+            // 没拖 — 当 click 处理
+            if let target = clickTarget, let sel = clickSelector {
+                _ = target.perform(sel, with: self)
+            }
+        } else {
+            onDragEnd?()
+        }
+    }
+}
+
+final class StatusItemPanel: NSPanel {
+    let content: StatusItemView
+
+    init() {
+        let size = NSSize(width: 22, height: 22)
+        self.content = StatusItemView(frame: NSRect(x: 2, y: 2, width: 18, height: 18))
+        super.init(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        self.level = .statusBar
+        self.backgroundColor = .clear
+        self.isOpaque = false
+        self.hasShadow = false
+        self.ignoresMouseEvents = false
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        self.isMovable = false
+        self.hidesOnDeactivate = false
+        self.contentView = content
+    }
+
+    func setIcon(_ image: NSImage) {
+        content.setIcon(image)
+    }
+}
+
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var mainWindow: NSWindow?
     private var settingsWindow: NSWindow?
+    private var statusPanel: StatusItemPanel?
+    private var popover: NSPopover?
     private var hotKeyRef: EventHotKeyRef?
     private var hotKeyHandler: () -> Void = {}
 
     // MARK: - 启动
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // .regular：Dock icon + app menu bar。MenuBarExtra 状态栏 item 在
-        // 这种模式下会被 macOS 当成 app menu bar item，位置在 screen (0, 0) —
-        // Apple menu 后面，**但有 tiny 心形在屏幕最左上角露出来**，用户能看到。
-        // 不调 setActivationPolicy 时（默认 LSUIElement=true 行为），心形完全
-        // 不可见。
-        // macOS 26 + MenuBarExtra 的已知行为 — 用户得 Cmd+drag 拖到可见位置。
-        NSApp.setActivationPolicy(.regular)
+        // 保持 LSUIElement=true 启动的 .accessory (UIElement) 默认 policy。
+        // **不要**调 setActivationPolicy(.regular) — macOS 26 上会把
+        // NSStatusItem 路由进 com.apple.controlcenter.statusitems scene
+        // （Control Center 弹窗辅助区），屏幕顶部菜单栏看不到。
+        // 改走 NSPanel 自定义浮动 panel（见 StatusItemPanel 上方注释）。
+        installStatusPanel()
         installGlobalHotKey()
 
-        // 监听新记录 → 发通知
+        // 监听新记录 → 更新状态栏图标 + 发通知
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleMissingAdded(_:)),
@@ -96,19 +173,118 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .openSettings,
             object: nil
         )
-        // 监听 prefs 变化（MenuBarExtra 的 StatusBarIcon 是 @ObservedObject，
-        // 自动 re-render — AppDelegate 这里只 log，未来要加副作用可以补)
+        // 监听 prefs 变化（showStatusItem / menuBarIconStyle）→ 重画 / 重建 status panel
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handlePrefsChanged(_:)),
             name: .appPreferencesDidChange,
             object: nil
         )
+        // 监听屏幕参数变化（显示器插拔 / 分辨率变化）→ 重新定位 panel
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screenParametersChanged),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
     }
 
-    @objc private func handlePrefsChanged(_ note: Notification) {
-        // StatusBarIcon 走 SwiftUI @ObservedObject 路径，prefs 变化自动 re-render。
-        // 这里留个钩子，将来如果要从 AppDelegate 层面处理 prefs 副作用可以补。
+    // MARK: - 状态栏 panel
+
+    private func installStatusPanel() {
+        guard AppPreferences.shared.showStatusItem else { return }
+        if statusPanel != nil { return }
+        let panel = StatusItemPanel()
+        panel.content.clickTarget = self
+        panel.content.clickSelector = #selector(togglePopover)
+        panel.content.onDragEnd = { [weak self, weak panel] in
+            guard let x = panel?.frame.origin.x else { return }
+            UserDefaults.standard.set(Double(x), forKey: Self.panelXKey)
+            self?.screenParametersChanged()  // 触发布局 sanity check
+        }
+        positionStatusPanel(panel)
+        panel.orderFront(nil)
+        statusPanel = panel
+        updateStatusPanelIcon()
+    }
+
+    private static let panelXKey = "MissingPlusPlusStatusPanelX"
+
+    private func positionStatusPanel(_ panel: StatusItemPanel) {
+        guard let screen = NSScreen.main else { return }
+        let frame = screen.frame
+        let panelSize = panel.frame.size
+        // 默认位置：屏幕顶部状态栏，screen 60% 处 — 在 Codex menu 结束（~30%）
+        // 之后、system status bar items（~70% 起）之前的空隙。
+        // 用户可以拖动 panel 到任意位置，x 会持久化到 UserDefaults。
+        let savedX = UserDefaults.standard.double(forKey: Self.panelXKey)
+        let x: CGFloat = savedX > 0 ? CGFloat(savedX) : frame.maxX * 0.60
+        // 垂直居中到 status bar 视觉中心 (macOS 26 status bar 高 33pt，
+        // item 22pt 居中 — 中心 y = (frame.maxY + visibleFrame.maxY) / 2)
+        let centerY = (frame.maxY + screen.visibleFrame.maxY) / 2
+        let y = centerY - panelSize.height / 2
+        panel.setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    @objc private func screenParametersChanged() {
+        if let panel = statusPanel {
+            positionStatusPanel(panel)
+        }
+    }
+
+    private func updateStatusPanelIcon() {
+        guard let panel = statusPanel else { return }
+        let latestMood = MissingStore.shared.sortedItems.first?.mood
+        let image = MenuBarIconRenderer.image(
+            mood: latestMood,
+            style: AppPreferences.shared.menuBarIconStyle
+        )
+        panel.setIcon(image)
+    }
+
+    private func makePopover() -> NSPopover {
+        let p = NSPopover()
+        p.behavior = .semitransient
+        p.contentSize = NSSize(width: 360, height: 560)
+        p.contentViewController = NSHostingController(
+            rootView: PopoverContent(
+                store: MissingStore.shared,
+                onOpenMainWindow: { [weak self] in
+                    self?.openMainWindowFromPopover()
+                }
+            )
+            .frame(width: 360, height: 560)
+        )
+        return p
+    }
+
+    private func openMainWindowFromPopover() {
+        popover?.performClose(nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.showMainWindow()
+        }
+    }
+
+    @objc private func togglePopover() {
+        // AGENTS.md §8: popover 在 menu bar 同一 tick 同步 show 会被 transient
+        // 行为当 outside click 立刻关掉。推到下一个 runloop tick。
+        if let p = popover, p.isShown {
+            p.performClose(nil)
+            return
+        }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let panel = self.statusPanel else { return }
+            let p = self.popover ?? self.makePopover()
+            self.popover = p
+            if let host = p.contentViewController?.view {
+                _ = host.frame
+            }
+            p.show(
+                relativeTo: panel.content.bounds,
+                of: panel.content,
+                preferredEdge: .maxY
+            )
+        }
     }
 
     // MARK: - Dock 点击
@@ -175,12 +351,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         showSettingsWindow()
     }
 
-    // MARK: - 新增记录 → 通知
+    // MARK: - 状态变化
 
     @objc private func handleMissingAdded(_ note: Notification) {
         guard let missing = note.userInfo?["missing"] as? Missing else { return }
+        // 状态栏图标 mood 联动
+        updateStatusPanelIcon()
         postRecordNotification(for: missing)
     }
+
+    @objc private func handlePrefsChanged(_ note: Notification) {
+        // showStatusItem 切换：true → 安装 / false → 移除
+        if AppPreferences.shared.showStatusItem {
+            if statusPanel == nil {
+                installStatusPanel()
+            } else {
+                updateStatusPanelIcon()
+            }
+        } else if let panel = statusPanel {
+            popover?.performClose(nil)
+            popover = nil
+            panel.orderOut(nil)
+            statusPanel = nil
+        }
+    }
+
+    // MARK: - 新增记录 → 通知
 
     private func postRecordNotification(for missing: Missing) {
         let center = UNUserNotificationCenter.current()
@@ -228,7 +424,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func registerHotKey(keyCode: UInt32, modifiers: UInt32) {
-        var hotKeyID = EventHotKeyID(signature: OSType(0x4D53504D), id: 1)
+        let hotKeyID = EventHotKeyID(signature: OSType(0x4D53504D), id: 1)
         var eventType = EventTypeSpec(
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
