@@ -4,6 +4,10 @@ import SwiftUI
 extension Notification.Name {
     static let missingStoreDidAdd = Notification.Name("MissingStoreDidAdd")
     static let missingStoreDidImport = Notification.Name("MissingStoreDidImport")
+    /// Posted by `MissingStore` when a record is mutated in place
+    /// (resolved stamped, reality check attached, triggers updated).
+    /// `userInfo: ["missing": Missing]` carries the updated record.
+    static let missingStoreDidUpdate = Notification.Name("MissingStoreDidUpdate")
     /// Posted by views (e.g. the popover overflow menu) when the user
     /// wants the settings window to open. `AppDelegate` listens for this
     /// and shows / raises the settings window.
@@ -45,6 +49,41 @@ final class MissingStore: ObservableObject {
         items.removeAll { $0.id == missing.id }
         rebuildKnownWhos()
         save()
+    }
+
+    /// Stamp `resolvedAt` on the given record (default: now). Idempotent — calling
+    /// again resets the stamp. Posts `.missingStoreDidUpdate` so views (HistoryList /
+    /// StatisticsView) re-render.
+    func markResolved(_ missing: Missing, at date: Date = Date()) {
+        guard let idx = items.firstIndex(where: { $0.id == missing.id }) else { return }
+        items[idx].resolvedAt = date
+        save()
+        NotificationCenter.default.post(
+            name: .missingStoreDidUpdate, object: self,
+            userInfo: ["missing": items[idx]]
+        )
+    }
+
+    /// Attach a reality check to the given record. Posts `.missingStoreDidUpdate`.
+    func attachRealityCheck(_ missing: Missing, check: RealityCheck) {
+        guard let idx = items.firstIndex(where: { $0.id == missing.id }) else { return }
+        items[idx].realityCheck = check
+        save()
+        NotificationCenter.default.post(
+            name: .missingStoreDidUpdate, object: self,
+            userInfo: ["missing": items[idx]]
+        )
+    }
+
+    /// Update trigger tags on the given record. Posts `.missingStoreDidUpdate`.
+    func updateTriggers(_ missing: Missing, tags: [TriggerTag]) {
+        guard let idx = items.firstIndex(where: { $0.id == missing.id }) else { return }
+        items[idx].triggerTags = tags
+        save()
+        NotificationCenter.default.post(
+            name: .missingStoreDidUpdate, object: self,
+            userInfo: ["missing": items[idx]]
+        )
     }
 
     /// Replace the in-memory list wholesale and persist. Used by import
