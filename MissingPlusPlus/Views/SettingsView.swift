@@ -27,11 +27,12 @@ struct SettingsView: View {
         Form {
             storageSection
             menuBarSection
+            attachmentBundleSection
             dataSection
             aboutSection
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 600)
+        .frame(width: 480, height: 660)
         .alert("清空所有记录？", isPresented: $showingClearConfirm) {
             Button("取消", role: .cancel) {}
             Button("清空", role: .destructive) {
@@ -65,6 +66,22 @@ struct SettingsView: View {
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+
+    // MARK: - 依恋辅助 (v1.x anxious-attachment bundle)
+
+    private var attachmentBundleSection: some View {
+        Section {
+            Toggle("高强度时弹出现实检验", isOn: $prefs.autoPromptRealityCheck)
+            Toggle("新建时回访「上一条平复了吗」", isOn: $prefs.autoPromptResolveLast)
+            Toggle("通知里带 trigger 信息", isOn: $prefs.notificationIncludeTriggers)
+        } header: {
+            Text("依恋辅助")
+        } footer: {
+            Text("这些工具帮助焦虑型依恋人格看见 trigger 模式、累积「浪会过去」的证据。")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
     }
 
