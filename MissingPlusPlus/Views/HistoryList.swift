@@ -3,6 +3,8 @@ import SwiftUI
 struct HistoryList: View {
     @ObservedObject var store: MissingStore
     @State private var query: String = ""
+    /// v1.x: 点击卡片底部"做现实检验"按钮 → 弹这个 sheet（per-card 一次性）
+    @State private var pendingRealityCheck: Missing?
 
     private var filtered: [Missing] {
         let q = query.trimmingCharacters(in: .whitespaces)
@@ -60,11 +62,22 @@ struct HistoryList: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(filtered) { item in
-                            HistoryRow(item: item)
+                            HistoryRow(
+                                item: item,
+                                onResolve: { store.markResolved(item) },
+                                onRequestCheck: { pendingRealityCheck = item }
+                            )
                             Divider().padding(.leading, 40)
                         }
                     }
                 }
+            }
+        }
+        .sheet(item: $pendingRealityCheck) { record in
+            RealityCheckSheet(missing: record) { check in
+                store.attachRealityCheck(record, check: check)
+            } onSkip: {
+                // no-op
             }
         }
     }
@@ -88,31 +101,107 @@ struct HistoryList: View {
 
 private struct HistoryRow: View {
     let item: Missing
+    let onResolve: () -> Void
+    let onRequestCheck: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Text(item.mood.emoji)
                 .font(.title3)
                 .frame(width: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(item.who)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                    Text("·")
-                        .foregroundColor(.secondary)
-                    Text(item.intensity.label)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    HStack(spacing: 4) {
+                        Text(item.who)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text("·")
+                            .foregroundColor(.secondary)
+                        Text(item.intensity.label)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    resolvedButton
                 }
-                Text(relativeTime(item.createdAt))
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                triggerChips
+                realityCheckSection
+                HStack {
+                    Text(relativeTime(item.createdAt))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    if item.realityCheck == nil {
+                        Button(action: onRequestCheck) {
+                            Label("做现实检验", systemImage: "checkmark.bubble")
+                                .font(.caption2)
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundColor(.purple)
+                    }
+                }
             }
-            Spacer()
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private var resolvedButton: some View {
+        Button(action: onResolve) {
+            if let resolvedAt = item.resolvedAt {
+                Text("✓ " + relativeTime(resolvedAt))
+                    .font(.caption2)
+                    .foregroundColor(MoodColor.forMood(item.mood))
+            } else {
+                Text("○")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var triggerChips: some View {
+        if !item.triggerTags.isEmpty {
+            HStack(spacing: 4) {
+                ForEach(item.triggerTags.prefix(3)) { tag in
+                    Text(tag.displayString)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(Capsule())
+                }
+                if item.triggerTags.count > 3 {
+                    Text("+\(item.triggerTags.count - 3)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var realityCheckSection: some View {
+        if let rc = item.realityCheck {
+            DisclosureGroup {
+                VStack(alignment: .leading, spacing: 4) {
+                    if let s = rc.evidenceFor { Text("• 证据：\(s)").font(.caption2) }
+                    if let s = rc.evidenceAgainst { Text("• 反对：\(s)").font(.caption2) }
+                    if let s = rc.nextAction { Text("• 接下来：\(s)").font(.caption2) }
+                }
+                .foregroundColor(.secondary)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.bubble")
+                    Text("已做现实检验")
+                }
+                .font(.caption2)
+                .foregroundColor(.purple)
+            }
+        }
     }
 
     private func relativeTime(_ date: Date) -> String {
