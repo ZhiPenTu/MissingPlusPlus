@@ -122,7 +122,7 @@ private struct HistoryRow: View {
             Text(item.mood.emoji)
                 .font(.title3)
                 .frame(width: 28)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 HStack {
                     HStack(spacing: 4) {
                         Text(item.who)
@@ -180,7 +180,7 @@ private struct HistoryRow: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder
@@ -202,12 +202,12 @@ private struct HistoryRow: View {
     @ViewBuilder
     private var triggerChips: some View {
         if !item.triggerTags.isEmpty {
-            HStack(spacing: 4) {
+            HStack(spacing: 3) {
                 ForEach(item.triggerTags.prefix(3)) { tag in
                     Text(tag.displayString)
                         .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
                         .background(Color.gray.opacity(0.1))
                         .clipShape(Capsule())
                 }
@@ -223,20 +223,34 @@ private struct HistoryRow: View {
     @ViewBuilder
     private var realityCheckSection: some View {
         if let rc = item.realityCheck {
-            DisclosureGroup {
-                VStack(alignment: .leading, spacing: 4) {
-                    if let s = rc.evidenceFor { Text("• 证据：\(s)").font(.caption2) }
-                    if let s = rc.evidenceAgainst { Text("• 反对：\(s)").font(.caption2) }
-                    if let s = rc.nextAction { Text("• 接下来：\(s)").font(.caption2) }
-                }
-                .foregroundColor(.secondary)
-            } label: {
+            VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.bubble")
                     Text("已做现实检验")
                 }
                 .font(.caption2)
                 .foregroundColor(.purple)
+                if let s = rc.evidenceFor {
+                    Text("• 证据：" + s)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                if let s = rc.evidenceAgainst {
+                    Text("• 反对：" + s)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                if let s = rc.nextAction {
+                    Text("• 接下来：" + s)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
             }
         }
     }
