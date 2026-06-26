@@ -547,3 +547,40 @@ item.autosaveName = "MissingPlusPlusHeart"
 - 不要把 3 个 insight 卡片的数字"凑好看"（用真实数字，不人为 floor 30% → 50%）
 - 不要把 banner 的 30 分钟 grace period 缩到 < 10 分钟（焦虑型用户提交后立刻被问会 push 反效果）
 - 不要给 `RealityCheckSheet` 加"上次的草稿"（每次 fresh 写，避免"上次的情绪污染这次的判断"）
+
+## 23. Self-Soothing Bundle（v1.x 第二轮）
+
+针对焦虑型依恋人格的"浪来时接住你"—— body 层 self-soothing 工具，和 §22 认知层（record）形成完整链路。Spec 在 `docs/superpowers/specs/2026-06-26-self-soothing-bundle-design.md`，plan 在 `docs/superpowers/plans/2026-06-26-self-soothing-bundle.md`。
+
+**3 个 sub-sheet 工具**：
+- `GroundingSheet` —— 5-4-3-2-1 sensory grounding，step-by-step 手点引导
+- `SelfCompassionView` —— 1 句 curated 短语 + "再抽一句"
+- `CooldownSheet` —— 1 条 cooldown 活动 + "再抽一个"
+
+**3 个入口**：
+- **A 路径**（强 nudge）：`RealityCheckSheet` 底部 3 sub-button，强 intensity 弹 RealityCheckSheet 后路径最短
+- **B 路径**（事后回访）：`HistoryList` 卡片底部 3 sub-button，mild 也能用
+- **mild 兜底**：`NewMissingForm` submit 后 5 秒 inline "想冷静一下？" link（mild 不弹 RealityCheckSheet 的兜底，5 秒后自动 fade）
+
+**数据层**：
+- `cooldownActivities: [String]` in AppPreferences（**只存用户追加的**，预定义 6 条 hardcode 在 `CooldownActivities.defaults`）
+- 渲染时 `CooldownActivities.all(custom:)` 拼接
+- UserDefaults 缺字段 fallback 到 `[]` + 6 条预定义
+
+**Self-compassion 池子**：7 句 curated（Kristin Neff 风格：mindfulness + common humanity + self-kindness），v1 hardcode 不让用户改。
+
+**预定义 6 条 cooldown**：喝杯水 / 出门走 5 分钟 / 深呼吸 10 次 / 听一首喜欢的歌 / 给朋友发条消息 / 抱抱毛绒玩具 / 家里的宠物。🔒 锁死，用户不能删，只能 append 自己的。
+
+**pbxproj patch**：4 个新 Swift 文件（CooldownActivities / GroundingSheet / SelfCompassionView / CooldownSheet）走 §22 流程。**继续警惕 SECOND `G0000001... Sources` sentinel 那条坑**（PBXNativeTarget.buildPhases 是第一个 occurrence，PBXSourcesBuildPhase files 才是第二个，要写对地方）。
+
+**「不要做」**（这一轮新加）：
+- 不要把 self-compassion 短语做成用户自定义（v1 curated 7 句，避免鸡汤合集）
+- 不要做 timer-based "5 分钟 grounding"（5-4-3-2-1 是手点引导式）
+- 不要在 RealityCheckSheet 弹出的同时强制弹 self-soothing（让用户选）
+- 不要把 cooldown 活动存到 records 里（preference-level 数据）
+- 不要在 popover（`PopoverContent`）里加 3 sub-button（popover 是 peek，工具在主窗口用）
+- 不要给 sub-sheet 加"上次的草稿"恢复（每次 fresh 写，sub-sheet 是 transient self-soothing）
+- 不要让 3 个 sub-sheet 自动循环 / 自动重开（用户主动点是 in control）
+- 不要把预定义 6 条 cooldown 暴露给用户删（v1 锁死，6 条是开箱即用 fallback）
+- 不要在 5-4-3-2-1 step 中加 timer / 自动跳下一步（手点 = 用户 in control）
+- 不要给 CooldownSheet 加"完成打卡" / "我做了"按钮（这工具是"想到一个可做的事"，不是 task tracker）
