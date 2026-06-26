@@ -80,21 +80,40 @@ struct NewMissingForm: View {
     private var formFields: some View {
         VStack(alignment: .leading, spacing: 16) {
             if showSoothingLink {
-                HStack {
+                HStack(spacing: 8) {
                     Image(systemName: "sparkles")
                         .foregroundColor(.pink)
                     Text("想冷静一下？")
                         .font(.caption)
+                        .lineLimit(1)
                     Spacer()
-                    Button("5-4-3-2-1") { pendingGrounding = true }
-                        .buttonStyle(.borderless)
-                        .font(.caption2)
-                    Button("自我同情") { pendingCompassion = true }
-                        .buttonStyle(.borderless)
-                        .font(.caption2)
-                    Button("分散") { pendingCooldown = true }
-                        .buttonStyle(.borderless)
-                        .font(.caption2)
+                    Button {
+                        pendingGrounding = true
+                    } label: {
+                        Image(systemName: "eye")
+                            .font(.callout)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.blue)
+                    .help("5-4-3-2-1 grounding")
+                    Button {
+                        pendingCompassion = true
+                    } label: {
+                        Image(systemName: "heart.text.square")
+                            .font(.callout)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.pink)
+                    .help("自我同情")
+                    Button {
+                        pendingCooldown = true
+                    } label: {
+                        Image(systemName: "shuffle")
+                            .font(.callout)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.purple)
+                    .help("分散注意力")
                 }
                 .padding(8)
                 .background(

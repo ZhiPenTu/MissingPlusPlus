@@ -139,57 +139,43 @@ private struct HistoryRow: View {
                 }
                 triggerChips
                 realityCheckSection
-                HStack {
+                HStack(spacing: 10) {
                     Text(relativeTime(item.createdAt))
                         .font(.caption2)
                         .foregroundColor(.secondary)
+                        .lineLimit(1)
                     Spacer()
+                    // v1.x: 4 个 icon-only sub-button（per-card 手动，hover tooltip 显示 label）
                     if item.realityCheck == nil {
                         Button(action: onRequestCheck) {
-                            Label("做现实检验", systemImage: "checkmark.bubble")
-                                .font(.caption2)
+                            Image(systemName: "checkmark.bubble")
+                                .font(.callout)
                         }
                         .buttonStyle(.borderless)
                         .foregroundColor(.purple)
+                        .help("做现实检验")
                     }
-                    // v1.x self-soothing: 3 sub-button (per-card 手动)
                     Button(action: onRequestGrounding) {
-                        Label("5-4-3-2-1", systemImage: "eye")
-                            .font(.caption2)
+                        Image(systemName: "eye")
+                            .font(.callout)
                     }
                     .buttonStyle(.borderless)
                     .foregroundColor(.blue)
+                    .help("5-4-3-2-1 grounding")
                     Button(action: onRequestCompassion) {
-                        Label("自我同情", systemImage: "heart.text.square")
-                            .font(.caption2)
+                        Image(systemName: "heart.text.square")
+                            .font(.callout)
                     }
                     .buttonStyle(.borderless)
                     .foregroundColor(.pink)
+                    .help("自我同情")
                     Button(action: onRequestCooldown) {
-                        Label("分散", systemImage: "shuffle")
-                            .font(.caption2)
+                        Image(systemName: "shuffle")
+                            .font(.callout)
                     }
                     .buttonStyle(.borderless)
                     .foregroundColor(.purple)
-                    // v1.x self-soothing: 3 sub-button (per-card 手动)
-                    Button(action: onRequestGrounding) {
-                        Label("5-4-3-2-1", systemImage: "eye")
-                            .font(.caption2)
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.blue)
-                    Button(action: onRequestCompassion) {
-                        Label("自我同情", systemImage: "heart.text.square")
-                            .font(.caption2)
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.pink)
-                    Button(action: onRequestCooldown) {
-                        Label("分散", systemImage: "shuffle")
-                            .font(.caption2)
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.purple)
+                    .help("分散注意力")
                 }
             }
         }

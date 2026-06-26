@@ -58,8 +58,8 @@ struct RealityCheckSheet: View {
                 .disabled(canSave == false)
             }
 
-            // v1.x self-soothing: 3 sub-button 入口
-            HStack {
+            // v1.x self-soothing: 3 icon-only sub-button (hover tooltip 显示 label)
+            HStack(spacing: 8) {
                 Text("想先做点别的？")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -67,24 +67,30 @@ struct RealityCheckSheet: View {
                 Button {
                     pendingGrounding = true
                 } label: {
-                    Label("5-4-3-2-1", systemImage: "eye")
-                        .font(.caption2)
+                    Image(systemName: "eye")
+                        .font(.callout)
                 }
                 .buttonStyle(.borderless)
+                .foregroundColor(.blue)
+                .help("5-4-3-2-1 grounding")
                 Button {
                     pendingCompassion = true
                 } label: {
-                    Label("自我同情", systemImage: "heart.text.square")
-                        .font(.caption2)
+                    Image(systemName: "heart.text.square")
+                        .font(.callout)
                 }
                 .buttonStyle(.borderless)
+                .foregroundColor(.pink)
+                .help("自我同情")
                 Button {
                     pendingCooldown = true
                 } label: {
-                    Label("分散", systemImage: "shuffle")
-                        .font(.caption2)
+                    Image(systemName: "shuffle")
+                        .font(.callout)
                 }
                 .buttonStyle(.borderless)
+                .foregroundColor(.purple)
+                .help("分散注意力")
             }
             .padding(.top, 4)
         }
