@@ -567,7 +567,7 @@ item.autosaveName = "MissingPlusPlusHeart"
 - 渲染时 `CooldownActivities.all(custom:)` 拼接
 - UserDefaults 缺字段 fallback 到 `[]` + 6 条预定义
 
-**Self-compassion 池子**：7 句 curated（Kristin Neff 风格：mindfulness + common humanity + self-kindness），v1 hardcode 不让用户改。
+**Self-compassion 池子**：17 句 curated（Kristin Neff 风格：mindfulness + common humanity + self-kindness），v1 hardcode 不让用户改。
 
 **预定义 6 条 cooldown**：喝杯水 / 出门走 5 分钟 / 深呼吸 10 次 / 听一首喜欢的歌 / 给朋友发条消息 / 抱抱毛绒玩具 / 家里的宠物。🔒 锁死，用户不能删，只能 append 自己的。
 

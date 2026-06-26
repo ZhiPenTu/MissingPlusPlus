@@ -32,7 +32,7 @@ Record bundle（v1.x 第一轮，spec `2026-06-26-anxious-attachment-bundle-desi
 ## 3. 非目标
 
 - 不做 timer-based "5 分钟冥想"（5-4-3-2-1 是手点引导，不是被动 timer）
-- 不做 self-compassion 用户自定义短语（v1 curated 7 句，避免鸡汤合集）
+- 不做 self-compassion 用户自定义短语（v1 curated 17 句，避免鸡汤合集）
 - 不在 popover（`PopoverContent`）里加 3 sub-button（popover 是 peek，工具在主窗口用）
 - 不在 `Missing` 模型里加新字段（这次所有数据走 AppPreferences/UserDefaults）
 - 不做 push notification 主动推送 self-soothing（v1 永远 opt-in via 按钮）
@@ -94,7 +94,7 @@ enum CooldownActivities {
     }
 }
 
-/// Self-compassion 7 句 curated 池子（Kristin Neff 风格：
+/// Self-compassion 17 句 curated 池子（Kristin Neff 风格：
 /// mindfulness + common humanity + self-kindness 三要素）。v1 hardcode，
 /// 不让用户改，避免鸡汤合集。
 enum SelfCompassionPhrases {
@@ -690,7 +690,7 @@ dismiss → 回到 HistoryList
 
 按 `AGENTS.md §5.1` 已有规则继续生效，这一轮新加：
 
-- 不要把 self-compassion 短语做成用户自定义（v1 curated 7 句，避免鸡汤合集）
+- 不要把 self-compassion 短语做成用户自定义（v1 curated 17 句，避免鸡汤合集）
 - 不要做 timer-based "5 分钟 grounding"（5-4-3-2-1 是手点引导式）
 - 不要在 RealityCheckSheet 弹出的同时强制弹 self-soothing（让用户选）
 - 不要把 cooldown 活动存到 records 里（preference-level 数据）
