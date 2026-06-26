@@ -32,6 +32,7 @@
 		A1000009000000000000A001 /* HistoryList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000009000000000000A001 /* HistoryList.swift */; };
 		A1000011000000000000A001 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000011000000000000A001 /* AppPreferences.swift */; };
 		A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A001 /* MenuBarIconRenderer.swift */; };
+		A1000012000000000000A002 /* TriggerTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A002 /* TriggerTag.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +64,7 @@
 		B1000009000000000000A001 /* HistoryList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryList.swift; sourceTree = "<group>"; };
 		B1000011000000000000A001 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		B1000012000000000000A001 /* MenuBarIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconRenderer.swift; sourceTree = "<group>"; };
+		B1000012000000000000A002 /* TriggerTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriggerTag.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +114,7 @@
 				B1000002000000000000A001 /* Missing.swift */,
 				B1000003000000000000A001 /* Mood.swift */,
 				B1000004000000000000A001 /* Intensity.swift */,
+			B1000012000000000000A002 /* TriggerTag.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
