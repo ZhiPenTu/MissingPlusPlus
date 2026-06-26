@@ -33,6 +33,7 @@
 		A1000011000000000000A001 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000011000000000000A001 /* AppPreferences.swift */; };
 		A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A001 /* MenuBarIconRenderer.swift */; };
 		A1000012000000000000A002 /* TriggerTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A002 /* TriggerTag.swift */; };
+		A1000012000000000000A003 /* RealityCheckSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A003 /* RealityCheckSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +66,7 @@
 		B1000011000000000000A001 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		B1000012000000000000A001 /* MenuBarIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconRenderer.swift; sourceTree = "<group>"; };
 		B1000012000000000000A002 /* TriggerTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriggerTag.swift; sourceTree = "<group>"; };
+		B1000012000000000000A003 /* RealityCheckSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealityCheckSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +140,7 @@
 				B1000008000000000000A001 /* NewMissingForm.swift */,
 				B1000009000000000000A001 /* HistoryList.swift */,
 				B000001700000000000A001 /* SettingsView.swift */,
+			B1000012000000000000A003 /* RealityCheckSheet.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -264,6 +267,7 @@
 				A1000011000000000000A001 /* AppPreferences.swift in Sources */,
 				A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */,
 			A1000012000000000000A002 /* TriggerTag.swift in Sources */,
+			A1000012000000000000A003 /* RealityCheckSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,80 @@
+import SwiftUI
+
+/// DBT "Check the Facts" skill 的轻量落点：把"我现在的情绪"拆成
+/// "证据 / 反对证据 / 接下来做什么" 三栏事实，焦虑型最容易在 strong intensity
+/// 时被 emotion flooding 拉走，这个 sheet 是温柔的外部 nudge。
+struct RealityCheckSheet: View {
+    let missing: Missing
+    var onSave: (RealityCheck) -> Void
+    var onSkip: () -> Void
+
+    @State private var evidenceFor: String = ""
+    @State private var evidenceAgainst: String = ""
+    @State private var nextAction: String = ""
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("现实检验")
+                    .font(.headline)
+                Text("DBT 的「Check the Facts」：写下来，情绪就变成可观察的事实。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            field(title: "这次想念的证据是…",
+                  placeholder: "比如：TA 5h 没回我消息",
+                  text: $evidenceFor)
+            field(title: "反对的证据是…",
+                  placeholder: "比如：上周 TA 也这样，后来回我说在加班",
+                  text: $evidenceAgainst)
+            field(title: "我接下来会…",
+                  placeholder: "比如：再等 30 分钟；不主动发消息",
+                  text: $nextAction)
+
+            HStack {
+                Button("跳过") {
+                    onSkip()
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+                Spacer()
+                Button("保存") {
+                    let check = RealityCheck(
+                        evidenceFor: trimmedOrNil(evidenceFor),
+                        evidenceAgainst: trimmedOrNil(evidenceAgainst),
+                        nextAction: trimmedOrNil(nextAction),
+                        checkedAt: Date()
+                    )
+                    onSave(check)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(canSave == false)
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
+    }
+
+    private var canSave: Bool {
+        trimmedOrNil(evidenceFor) != nil ||
+        trimmedOrNil(evidenceAgainst) != nil ||
+        trimmedOrNil(nextAction) != nil
+    }
+
+    private func field(title: String, placeholder: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption).foregroundColor(.secondary)
+            TextField(placeholder, text: text, axis: .vertical)
+                .lineLimit(2...4)
+                .textFieldStyle(.roundedBorder)
+        }
+    }
+
+    private func trimmedOrNil(_ s: String) -> String? {
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? nil : t
+    }
+}
