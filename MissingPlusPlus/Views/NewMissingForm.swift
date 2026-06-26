@@ -2,6 +2,10 @@ import SwiftUI
 
 struct NewMissingForm: View {
     @ObservedObject var store: MissingStore
+    // 这个组件只服务主窗口 (MenuBarContent 的 "新建" tab)。
+    // popover 用自己的 PopoverContent + inline form — 不复用此组件，
+    // 因为主窗口后续可能加更多功能 (扩展点), popover 保持快录紧凑
+    // 不受主窗口改动影响。
     @State private var who: String = ""
     @State private var mood: Mood = .happy
     @State private var intensity: Intensity = .mild
@@ -37,29 +41,13 @@ struct NewMissingForm: View {
             Divider()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    WhoField(who: $who, suggestions: store.knownWhos)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("心情")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        MoodPicker(selection: $mood)
-                    }
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("程度")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Picker("程度", selection: $intensity) {
-                            ForEach(Intensity.allCases) { level in
-                                Text(level.label).tag(level)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                    }
-                }
-                .padding(16)
+                formFields
+                    .padding(16)
             }
+
+            // Spacer 撑中间空 — 字段少时不会让 ScrollView 区域空出大块
+            // (ScrollView fill maxHeight 会让背景色铺满中间，看出"空")
+            Spacer(minLength: 0)
 
             Divider()
 
@@ -68,6 +56,30 @@ struct NewMissingForm: View {
                 .background(Color(NSColor.windowBackgroundColor))
         }
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    private var formFields: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            WhoField(who: $who, suggestions: store.knownWhos)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("心情")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                MoodPicker(selection: $mood)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("程度")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Picker("程度", selection: $intensity) {
+                    ForEach(Intensity.allCases) { level in
+                        Text(level.label).tag(level)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+        }
     }
 
     // MARK: - header

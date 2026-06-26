@@ -334,3 +334,18 @@ struct SettingsView: View {
         statusIsError = error
     }
 }
+
+// MARK: - AppInfo
+
+/// App version + build metadata. Used by Settings → About section.
+/// Previously lived in PopoverOverflowMenu.swift which has been removed
+/// (About / Settings / Quit entries are provided by SwiftUI's
+///  app menu / Commands / Settings scene now).
+enum AppInfo {
+    static var shortVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+    }
+    static var buildNumber: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+    }
+}

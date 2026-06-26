@@ -44,6 +44,11 @@ enum MenuBarIconRenderer {
     static func image(mood: Mood?, style: MenuBarIconStyle) -> NSImage {
         let effectiveMood = mood ?? .happy
         let image = NSImage(size: iconSize)
+        // 必须设 transparent background — NSImage 默认 backgroundColor 是
+        // 黑色 (Gamma 2.2 colorspace 0 0)，lockFocus 之前不透明化会让
+        // SF Symbol / 文字以外的区域渲染成黑色方框（在 light vibrancy
+        // 下显示成浅色方框，看起来像 panel "有 box outline"）。
+        image.backgroundColor = .clear
         image.lockFocus()
         defer { image.unlockFocus() }
 

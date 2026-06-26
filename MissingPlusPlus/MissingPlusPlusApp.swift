@@ -245,7 +245,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func makePopover() -> NSPopover {
         let p = NSPopover()
         p.behavior = .semitransient
-        p.contentSize = NSSize(width: 360, height: 560)
+        p.contentSize = NSSize(width: 360, height: 410)
         p.contentViewController = NSHostingController(
             rootView: PopoverContent(
                 store: MissingStore.shared,
@@ -253,7 +253,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.openMainWindowFromPopover()
                 }
             )
-            .frame(width: 360, height: 560)
         )
         return p
     }

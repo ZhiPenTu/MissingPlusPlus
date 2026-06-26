@@ -15,7 +15,6 @@
 		A000001300000000000A001 /* MenuBarIcon-sad.png in Resources */ = {isa = PBXBuildFile; fileRef = B000001300000000000A001 /* MenuBarIcon-sad.png */; };
 		A000001400000000000A001 /* MenuBarIcon-longing.png in Resources */ = {isa = PBXBuildFile; fileRef = B000001400000000000A001 /* MenuBarIcon-longing.png */; };
 		A000001500000000000A001 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B000001500000000000A001 /* StatisticsView.swift */; };
-		A000001600000000000A001 /* PopoverOverflowMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = B000001600000000000A001 /* PopoverOverflowMenu.swift */; };
 		A000001700000000000A001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B000001700000000000A001 /* SettingsView.swift */; };
 		A000002000000000000A001 /* AppIcon-happy.icns in Resources */ = {isa = PBXBuildFile; fileRef = B000002000000000000A001 /* AppIcon-happy.icns */; };
 		A000002100000000000A001 /* AppIcon-joyful.icns in Resources */ = {isa = PBXBuildFile; fileRef = B000002100000000000A001 /* AppIcon-joyful.icns */; };
@@ -47,7 +46,6 @@
 		B000001300000000000A001 /* MenuBarIcon-sad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "MenuBarIcon-sad.png"; sourceTree = "<group>"; };
 		B000001400000000000A001 /* MenuBarIcon-longing.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "MenuBarIcon-longing.png"; sourceTree = "<group>"; };
 		B000001500000000000A001 /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
-		B000001600000000000A001 /* PopoverOverflowMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverOverflowMenu.swift; sourceTree = "<group>"; };
 		B000001700000000000A001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B000002000000000000A001 /* AppIcon-happy.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-happy.icns"; sourceTree = "<group>"; };
 		B000002100000000000A001 /* AppIcon-joyful.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-joyful.icns"; sourceTree = "<group>"; };
@@ -133,7 +131,6 @@
 			isa = PBXGroup;
 			children = (
 				B000001500000000000A001 /* StatisticsView.swift */,
-				B000001600000000000A001 /* PopoverOverflowMenu.swift */,
 				B1000007000000000000A001 /* MenuBarContent.swift */,
 				B1000008000000000000A001 /* NewMissingForm.swift */,
 				B1000009000000000000A001 /* HistoryList.swift */,
@@ -259,7 +256,6 @@
 				A1000008000000000000A001 /* NewMissingForm.swift in Sources */,
 				A1000009000000000000A001 /* HistoryList.swift in Sources */,
 				A000001500000000000A001 /* StatisticsView.swift in Sources */,
-				A000001600000000000A001 /* PopoverOverflowMenu.swift in Sources */,
 				A000001700000000000A001 /* SettingsView.swift in Sources */,
 				A1000010000000000000A001 /* StorageService.swift in Sources */,
 				A1000011000000000000A001 /* AppPreferences.swift in Sources */,
