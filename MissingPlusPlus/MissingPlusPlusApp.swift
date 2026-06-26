@@ -8,7 +8,7 @@ import UserNotifications
 /// AppDelegate 负责：
 /// - 自定义 NSPanel 浮动 status item（macOS 26 上 NSStatusItem 默认进
 ///   Control Center 弹窗辅助区，屏幕顶部菜单栏看不到 — 改用 NSPanel 自己画）
-/// - NSPopover toggle（panel 点击）
+/// - NSMenu 1-click 记录（panel 点击 → 5 mood × who submenu → store.add）
 /// - Dock 点击（`applicationShouldHandleReopen` → showMainWindow）
 /// - ⌥M 全局热键（Carbon `EventHotKey`）
 /// - 通知（`UNUserNotificationCenter`）
@@ -57,7 +57,7 @@ final class StatusItemView: NSView {
     var clickSelector: Selector?
     private let imageView = NSImageView()
     private var dragStartLocation: NSPoint = .zero
-    /// 拖动时把 panel 的 x origin 写到这里（popover 关闭时再持久化）
+    /// 拖动结束回调 — AppDelegate 那边把 panel.frame.origin.x 写进 UserDefaults
     var onDragEnd: (() -> Void)?
     /// 拖动超过这个距离才算 drag，避免跟 click 冲突
     private let dragThreshold: CGFloat = 4
@@ -144,7 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var mainWindow: NSWindow?
     private var settingsWindow: NSWindow?
     private var statusPanel: StatusItemPanel?
-    private var popover: NSPopover?
+    private var statusMenu: NSMenu?
     private var hotKeyRef: EventHotKeyRef?
     private var hotKeyHandler: () -> Void = {}
 
@@ -166,7 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .missingStoreDidAdd,
             object: nil
         )
-        // 监听设置入口（popover "…" 菜单 → post .openSettings → 开 settings 窗口）
+        // 监听设置入口（保留 notification 路径供未来菜单调用）
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleOpenSettings(_:)),
@@ -196,7 +196,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if statusPanel != nil { return }
         let panel = StatusItemPanel()
         panel.content.clickTarget = self
-        panel.content.clickSelector = #selector(togglePopover)
+        panel.content.clickSelector = #selector(statusPanelClicked)
         panel.content.onDragEnd = { [weak self, weak panel] in
             guard let x = panel?.frame.origin.x else { return }
             UserDefaults.standard.set(Double(x), forKey: Self.panelXKey)
@@ -242,48 +242,146 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.setIcon(image)
     }
 
-    private func makePopover() -> NSPopover {
-        let p = NSPopover()
-        p.behavior = .semitransient
-        p.contentSize = NSSize(width: 360, height: 410)
-        p.contentViewController = NSHostingController(
-            rootView: PopoverContent(
-                store: MissingStore.shared,
-                onOpenMainWindow: { [weak self] in
-                    self?.openMainWindowFromPopover()
-                }
-            )
+    // MARK: - 状态栏菜单 (1-click 记录)
+
+    /// 状态栏 panel 点击入口 — pop up 1-click 记录菜单。NSMenu 在
+    /// `popUp(...)` 期间由 `statusMenu` 强引用，菜单被用户关掉后系统
+    /// 会持有最后一份；下次点 panel 重新 build 一次反映最新的 knownWhos。
+    @objc private func statusPanelClicked() {
+        guard let panel = statusPanel else { return }
+        let menu = buildStatusMenu()
+        statusMenu = menu
+        // at: (0, 0) in panel.content → 菜单顶端对齐 panel 底端，
+        // 系统自动处理"放不下就放上面"的越界翻转
+        menu.popUp(
+            positioning: nil,
+            at: NSPoint(x: 0, y: 0),
+            in: panel.content
         )
-        return p
     }
 
-    private func openMainWindowFromPopover() {
-        popover?.performClose(nil)
-        DispatchQueue.main.async { [weak self] in
-            self?.showMainWindow()
-        }
-    }
+    private func buildStatusMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
 
-    @objc private func togglePopover() {
-        // AGENTS.md §8: popover 在 menu bar 同一 tick 同步 show 会被 transient
-        // 行为当 outside click 立刻关掉。推到下一个 runloop tick。
-        if let p = popover, p.isShown {
-            p.performClose(nil)
-            return
-        }
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self, let panel = self.statusPanel else { return }
-            let p = self.popover ?? self.makePopover()
-            self.popover = p
-            if let host = p.contentViewController?.view {
-                _ = host.frame
-            }
-            p.show(
-                relativeTo: panel.content.bounds,
-                of: panel.content,
-                preferredEdge: .maxY
+        // 5 mood 顶层项 — 每个挂一个 who 选择 submenu
+        let recentWhos = Array(MissingStore.shared.knownWhos.prefix(5))
+        for mood in Mood.allCases {
+            let item = NSMenuItem(
+                title: "\(mood.emoji)  \(mood.label)",
+                action: nil,
+                keyEquivalent: ""
             )
+            item.submenu = buildMoodSubmenu(for: mood, recentWhos: recentWhos)
+            menu.addItem(item)
         }
+
+        menu.addItem(.separator())
+
+        let openMain = NSMenuItem(
+            title: "在主窗口新建记录…",
+            action: #selector(openMainWindowFromMenu),
+            keyEquivalent: ""
+        )
+        openMain.target = self
+        menu.addItem(openMain)
+
+        menu.addItem(.separator())
+
+        // ⌘Q 已经在 SwiftUI app menu 注册 (CommandGroup(.appTermination)),
+        // 这里再 bind 一次让菜单显示快捷键提示
+        let quit = NSMenuItem(
+            title: "退出 Missing++",
+            action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q"
+        )
+        menu.addItem(quit)
+
+        return menu
+    }
+
+    private func buildMoodSubmenu(for mood: Mood, recentWhos: [String]) -> NSMenu {
+        let sub = NSMenu()
+        sub.autoenablesItems = false
+
+        // 不要 "TA" 默认 fallback — 用户每次都指定具体对象, "TA" 占位无意义。
+        // 直接列 recent whos；每个 who 是一个 submenu, 强度(一般/非常/无)在第三级
+        if recentWhos.isEmpty {
+            let hint = NSMenuItem(
+                title: "(还没有记录过对象)",
+                action: nil,
+                keyEquivalent: ""
+            )
+            hint.isEnabled = false
+            sub.addItem(hint)
+            sub.addItem(.separator())
+        } else {
+            for who in recentWhos {
+                sub.addItem(buildWhoItem(who: who, mood: mood))
+            }
+            sub.addItem(.separator())
+        }
+
+        let custom = NSMenuItem(
+            title: "在主窗口记录…",
+            action: #selector(openMainWindowFromMenu),
+            keyEquivalent: ""
+        )
+        custom.target = self
+        sub.addItem(custom)
+
+        return sub
+    }
+
+    private func buildWhoItem(who: String, mood: Mood) -> NSMenuItem {
+        let item = NSMenuItem(
+            title: who,
+            action: nil,
+            keyEquivalent: ""
+        )
+        item.submenu = buildIntensitySubmenu(who: who, mood: mood)
+        return item
+    }
+
+    private func buildIntensitySubmenu(who: String, mood: Mood) -> NSMenu {
+        let sub = NSMenu()
+        sub.autoenablesItems = false
+        // 一般 → 非常 → 无: 一般最常用, 排最前让 Return 直接 = 默认强度
+        let order: [Intensity] = [.mild, .strong, .none]
+        for intensity in order {
+            let item = NSMenuItem(
+                title: intensity.label,
+                action: #selector(recordFromMenu(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = RecordRequest(
+                mood: mood, who: who, intensity: intensity
+            )
+            sub.addItem(item)
+        }
+        return sub
+    }
+
+    @objc private func recordFromMenu(_ sender: NSMenuItem) {
+        guard let req = sender.representedObject as? RecordRequest else { return }
+        let entry = Missing(who: req.who, mood: req.mood, intensity: req.intensity)
+        MissingStore.shared.add(entry)
+        // 后续流程: MissingStore.add → post .missingStoreDidAdd →
+        // handleMissingAdded 收到 → 状态栏图标变 mood 色 + post 系统通知
+    }
+
+    @objc private func openMainWindowFromMenu() {
+        // 菜单会自动 dismiss，showMainWindow 是 main 窗口标准入口
+        showMainWindow()
+    }
+
+    /// NSMenuItem.representedObject 的载体 — 把 (mood, who, intensity)
+    /// 一起传给 recordFromMenu。struct 比 tuple 友好 (能 as? 强转)。
+    private struct RecordRequest {
+        let mood: Mood
+        let who: String
+        let intensity: Intensity
     }
 
     // MARK: - Dock 点击
@@ -368,8 +466,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 updateStatusPanelIcon()
             }
         } else if let panel = statusPanel {
-            popover?.performClose(nil)
-            popover = nil
+            statusMenu = nil
             panel.orderOut(nil)
             statusPanel = nil
         }
@@ -384,7 +481,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let content = UNMutableNotificationContent()
         let who = missing.who.isEmpty ? "TA" : missing.who
         content.title = "想念 \(who)"
-        content.body = "心情：\(missing.mood.label)　程度：\(missing.intensity.label)"
+        let base = "心情：\(missing.mood.label)　程度：\(missing.intensity.label)"
+        let triggerPart: String
+        if AppPreferences.shared.notificationIncludeTriggers,
+           !missing.triggerTags.isEmpty {
+            let strs = missing.triggerTags.map(\.displayString)
+            triggerPart = "　触发：" + strs.joined(separator: " ")
+        } else {
+            triggerPart = ""
+        }
+        content.body = base + triggerPart
         if let attachment = makeMoodAttachment(for: missing.mood) {
             content.attachments = [attachment]
         }
