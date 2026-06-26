@@ -492,3 +492,58 @@ item.autosaveName = "MissingPlusPlusHeart"
 - 不要在 entitlements 里只开 `user-selected.read-write` 不开 `bookmarks.app-scope` — 后者不开放签就是 session-scoped bookmark，重启就丢
 - 不要在 `SettingsView` 里直接调 `MissingStore.replaceAll(...)` 而不 alert 用户 — 删数据是 destructive action，必须走 confirmation dialog
 - 不要在 popover "…" 菜单里用 `NSApp.sendAction(Selector(("showSettingsWindow:")))` — 那个 selector 在 macOS 上不公开，靠碰运气；改用 `NotificationCenter` / `NSApp.delegate?.openSettings()` 这种公共路径
+
+## 22. Anxious Attachment Record Bundle（v1.x）
+
+针对焦虑型依恋人格的"看见 pattern / 累积平复证据 / DBT 落点"扩展。Spec 在 `docs/superpowers/specs/2026-06-26-anxious-attachment-bundle-design.md`，plan 在 `docs/superpowers/plans/2026-06-26-anxious-attachment-bundle.md`。
+
+**新字段**：
+- `Missing.triggerTags: [TriggerTag]`（默认 `[]`，8 个预定义 case）
+- `Missing.resolvedAt: Date?`（默认 `nil`）
+- `Missing.realityCheck: RealityCheck?`（默认 `nil`，含 `evidenceFor/evidenceAgainst/nextAction/checkedAt`）
+
+**JSON 兼容**（关键）：
+- `Missing` 自定义 `init(from:)` 用 `decodeIfPresent` + 默认值，老 JSON 自动读为 `[]` / `nil` / `nil`
+- `triggerTags` 未知 rawValue（未来加新 case 后老数据里的旧值）→ `compactMap(TriggerTag.init(rawValue:))` 过滤掉，不 crash
+- `RealityCheck` 整体 optional，老数据 `realityCheck == nil`（符合"还没做 reality check"）
+
+**TriggerTag 8 个 case**（`MissingPlusPlus/Models/TriggerTag.swift`）：
+`noReply` / `silent` / `fight` / `alone` / `sawSomething` / `pastMemory` / `separation` / `comparison`
+
+**3 个 insight 卡片**（统计 tab 顶部，过去 30 天）：
+1. 「浪都过去了」：平复率 % + 平均平复时长（bundle 最核心 evidence）
+2. 「你的常见 trigger」：Top 3 + 占比条
+3. 「现实检验完成度」：intensity ≥ strong 中做了 realityCheck 的 %
+
+**3 个新 toggle**（settings 依恋辅助 section）：
+- `autoPromptRealityCheck`（默认 true）—— intensity == strong submit 后自动弹 sheet
+- `autoPromptResolveLast`（默认 true）—— 新建表单顶部"上次想念平复了吗？"banner
+- `notificationIncludeTriggers`（默认 true）—— 通知 body 追加 trigger 信息
+
+**Banner 30 分钟 grace period**：`timeIntervalSince(latest.createdAt) > 30 * 60` 才显示，避免"刚提交就被问"的 awkwardness。
+
+**RealityCheckSheet 行为**：
+- 自动弹：intensity == strong + setting 开 + per-record 一次性
+- 手动入口：HistoryList 卡片"做现实检验"按钮（同一个 view）
+- 跳过无副作用
+- 全空 → 保存按钮 disabled（3 栏至少 1 栏非空才允许保存）
+- 一旦写了 `realityCheck` 不再弹
+
+**`MissingStore` 3 方法 + 1 notification**：
+- `markResolved(_:at:)` / `attachRealityCheck(_:check:)` / `updateTriggers(_:tags:)`
+- `Notification.Name.missingStoreDidUpdate`（和 `missingStoreDidAdd` 分开 — add 是新建，update 是补丁）
+- 3 个方法都用 `id` 定位 + `firstIndex` mutate + `save()` + post notification
+
+**pbxproj patch**：新增 Swift 文件走 `scripts/patch-pbxproj.py` 同款流程（PBXBuildFile / PBXFileReference / group children / PBXSourcesBuildPhase `files` list —— 注意是 SECOND occurrence of `G0000001... Sources` sentinel，第一个是 PBXNativeTarget.buildPhases，写错地方会导致 "PBXBuildFile _setTarget: unrecognized selector"）。`patch-pbxproj.py` 本身的 `update_pbxproj_swift.py` 临时脚本可能漏掉 Sources phase，要 verify plutil + build 都过。
+
+**不要做**（这一轮新加）：
+- 不要把 trigger 标签做成用户可自定义（v1 预定义 8 个，加自定义是独立 PR）
+- 不要在已 resolved 的 record 上再弹 reality check sheet（record 已经有 `realityCheck != nil` 时不弹）
+- 不要在 `MissingStore` 里直接读 `AppPreferences`（保持 store 不碰 UI/prefs；调用方传值）
+- 不要把 `triggerTags` / `resolvedAt` / `realityCheck` 写进 `note` 字段（用结构化字段，note 留给用户自由文本）
+- 不要做"重新弹 reality check"按钮（一旦写了 `realityCheck` 就固定，DBT 强调"做完就完"）
+- 不要做 trigger 用户自定义增删 UI（v1 严禁）
+- 不要在 popover（`PopoverContent`）里加 trigger picker（popover 是 peek 视图，记录功能留给主窗口 `MenuBarContent` / `NewMissingForm`）
+- 不要把 3 个 insight 卡片的数字"凑好看"（用真实数字，不人为 floor 30% → 50%）
+- 不要把 banner 的 30 分钟 grace period 缩到 < 10 分钟（焦虑型用户提交后立刻被问会 push 反效果）
+- 不要给 `RealityCheckSheet` 加"上次的草稿"（每次 fresh 写，避免"上次的情绪污染这次的判断"）
