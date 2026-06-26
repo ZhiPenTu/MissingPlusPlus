@@ -14,6 +14,11 @@ struct NewMissingForm: View {
     /// Submit 后若 intensity == strong + setting 开，置这个 → 弹 sheet。
     /// sheet dismiss 时 SwiftUI 自动把它设回 nil，下次提交新一条才再次触发。
     @State private var pendingRealityCheck: Missing?
+    /// v1.x self-soothing: mild submit 后 5 秒显示 "想冷静一下？" inline link。
+    @State private var showSoothingLink: Bool = false
+    @State private var pendingGrounding = false
+    @State private var pendingCompassion = false
+    @State private var pendingCooldown = false
 
     private var trimmedWho: String {
         who.trimmingCharacters(in: .whitespaces)
@@ -67,10 +72,37 @@ struct NewMissingForm: View {
                 // no-op — 用户主动跳过，无副作用
             }
         }
+        .sheet(isPresented: $pendingGrounding) { GroundingSheet() }
+        .sheet(isPresented: $pendingCompassion) { SelfCompassionView() }
+        .sheet(isPresented: $pendingCooldown) { CooldownSheet(prefs: AppPreferences.shared) }
     }
 
     private var formFields: some View {
         VStack(alignment: .leading, spacing: 16) {
+            if showSoothingLink {
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.pink)
+                    Text("想冷静一下？")
+                        .font(.caption)
+                    Spacer()
+                    Button("5-4-3-2-1") { pendingGrounding = true }
+                        .buttonStyle(.borderless)
+                        .font(.caption2)
+                    Button("自我同情") { pendingCompassion = true }
+                        .buttonStyle(.borderless)
+                        .font(.caption2)
+                    Button("分散") { pendingCooldown = true }
+                        .buttonStyle(.borderless)
+                        .font(.caption2)
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.pink.opacity(0.06))
+                )
+                .transition(.opacity)
+            }
             if let latest = store.sortedItems.first,
                latest.resolvedAt == nil,
                Date().timeIntervalSince(latest.createdAt) > 30 * 60,
@@ -230,6 +262,13 @@ struct NewMissingForm: View {
         if entry.intensity == .strong,
            AppPreferences.shared.autoPromptRealityCheck {
             pendingRealityCheck = entry
+        } else {
+            // mild 路径不弹 RealityCheckSheet，给一个 inline "想冷静一下？" 链接
+            // 5 秒后自动 fade
+            showSoothingLink = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                showSoothingLink = false
+            }
         }
 
         // Reset form for the next entry; keep the mood/intensity since
