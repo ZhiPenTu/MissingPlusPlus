@@ -55,6 +55,15 @@ final class AppPreferences: ObservableObject {
             defaults.set(notificationIncludeTriggers, forKey: Keys.notificationIncludeTriggers)
         }
     }
+    /// v1.x self-soothing bundle: 用户追加的 cooldown 活动。
+    /// 预定义 6 条在 `CooldownActivities.defaults`，永远在前面；
+    /// 这个数组只存用户追加的，渲染时 `CooldownActivities.all(custom:)` 拼接。
+    /// UserDefaults 缺字段 fallback 到 []，predefined 6 条仍在。
+    @Published var cooldownActivities: [String] {
+        didSet {
+            defaults.set(cooldownActivities, forKey: Keys.cooldownActivities)
+        }
+    }
 
     private let defaults = UserDefaults.standard
     private enum Keys {
@@ -64,6 +73,7 @@ final class AppPreferences: ObservableObject {
         static let autoPromptRealityCheck = "AutoPromptRealityCheck"
         static let autoPromptResolveLast = "AutoPromptResolveLast"
         static let notificationIncludeTriggers = "NotificationIncludeTriggers"
+        static let cooldownActivities = "CooldownActivities"
     }
     private init() {
         self.showStatusItem = defaults.object(forKey: Keys.showStatusItem) as? Bool ?? true
@@ -77,6 +87,8 @@ final class AppPreferences: ObservableObject {
             defaults.object(forKey: Keys.autoPromptResolveLast) as? Bool ?? true
         self.notificationIncludeTriggers =
             defaults.object(forKey: Keys.notificationIncludeTriggers) as? Bool ?? true
+        self.cooldownActivities =
+            defaults.stringArray(forKey: Keys.cooldownActivities) ?? []
     }
 }
 

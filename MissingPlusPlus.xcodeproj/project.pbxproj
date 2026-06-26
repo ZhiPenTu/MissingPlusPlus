@@ -37,6 +37,7 @@
 		A1000012000000000000A004 /* CooldownActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A004 /* CooldownActivities.swift */; };
 		A1000012000000000000A005 /* GroundingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A005 /* GroundingSheet.swift */; };
 		A1000012000000000000A006 /* SelfCompassionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A006 /* SelfCompassionView.swift */; };
+		A1000012000000000000A007 /* CooldownSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A007 /* CooldownSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +74,7 @@
 		B1000012000000000000A004 /* CooldownActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CooldownActivities.swift; sourceTree = "<group>"; };
 		B1000012000000000000A005 /* GroundingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroundingSheet.swift; sourceTree = "<group>"; };
 		B1000012000000000000A006 /* SelfCompassionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfCompassionView.swift; sourceTree = "<group>"; };
+		B1000012000000000000A007 /* CooldownSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CooldownSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +152,7 @@
 			B1000012000000000000A003 /* RealityCheckSheet.swift */,
 			B1000012000000000000A005 /* GroundingSheet.swift */,
 			B1000012000000000000A006 /* SelfCompassionView.swift */,
+			B1000012000000000000A007 /* CooldownSheet.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -280,6 +283,7 @@
 			A1000012000000000000A004 /* CooldownActivities.swift in Sources */,
 			A1000012000000000000A005 /* GroundingSheet.swift in Sources */,
 			A1000012000000000000A006 /* SelfCompassionView.swift in Sources */,
+			A1000012000000000000A007 /* CooldownSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
