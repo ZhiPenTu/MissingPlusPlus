@@ -28,11 +28,12 @@ struct SettingsView: View {
             storageSection
             menuBarSection
             attachmentBundleSection
+            cooldownSection
             dataSection
             aboutSection
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 660)
+        .frame(width: 480, height: 720)
         .alert("清空所有记录？", isPresented: $showingClearConfirm) {
             Button("取消", role: .cancel) {}
             Button("清空", role: .destructive) {
@@ -83,6 +84,66 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
+    }
+
+    // MARK: - Cooldown 活动 (v1.x self-soothing)
+
+    @State private var newCooldownText: String = ""
+
+    private var cooldownSection: some View {
+        Section {
+            ForEach(allCooldownActivities, id: \.self) { activity in
+                HStack {
+                    Text(activity)
+                    Spacer()
+                    if !CooldownActivities.defaults.contains(activity) {
+                        Button {
+                            removeCooldownActivity(activity)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        Image(systemName: "lock")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            HStack {
+                TextField("加一条你自己的…", text: $newCooldownText)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit(addCooldownActivity)
+                Button("添加", action: addCooldownActivity)
+                    .disabled(newCooldownText.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        } header: {
+            Text("Cooldown 活动")
+        } footer: {
+            Text("🔒 标记的是预定义 6 条（不能删）。你追加的可以删。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var allCooldownActivities: [String] {
+        CooldownActivities.all(custom: prefs.cooldownActivities)
+    }
+
+    private func addCooldownActivity() {
+        let trimmed = newCooldownText.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        var current = prefs.cooldownActivities
+        if !CooldownActivities.all(custom: current).contains(trimmed) {
+            current.append(trimmed)
+            prefs.cooldownActivities = current
+        }
+        newCooldownText = ""
+    }
+
+    private func removeCooldownActivity(_ activity: String) {
+        prefs.cooldownActivities.removeAll { $0 == activity }
     }
 
     // MARK: - 存储位置
