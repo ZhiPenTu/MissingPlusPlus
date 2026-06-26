@@ -5,6 +5,10 @@ struct HistoryList: View {
     @State private var query: String = ""
     /// v1.x: 点击卡片底部"做现实检验"按钮 → 弹这个 sheet（per-card 一次性）
     @State private var pendingRealityCheck: Missing?
+    /// v1.x self-soothing: 3 个 sub-sheet 入口
+    @State private var pendingGrounding: Missing?
+    @State private var pendingCompassion: Missing?
+    @State private var pendingCooldown: Missing?
 
     private var filtered: [Missing] {
         let q = query.trimmingCharacters(in: .whitespaces)
@@ -65,7 +69,10 @@ struct HistoryList: View {
                             HistoryRow(
                                 item: item,
                                 onResolve: { store.markResolved(item) },
-                                onRequestCheck: { pendingRealityCheck = item }
+                                onRequestCheck: { pendingRealityCheck = item },
+                                onRequestGrounding: { pendingGrounding = item },
+                                onRequestCompassion: { pendingCompassion = item },
+                                onRequestCooldown: { pendingCooldown = item }
                             )
                             Divider().padding(.leading, 40)
                         }
@@ -80,6 +87,9 @@ struct HistoryList: View {
                 // no-op
             }
         }
+        .sheet(item: $pendingGrounding) { _ in GroundingSheet() }
+        .sheet(item: $pendingCompassion) { _ in SelfCompassionView() }
+        .sheet(item: $pendingCooldown) { _ in CooldownSheet(prefs: AppPreferences.shared) }
     }
 
     private var emptyState: some View {
@@ -103,6 +113,9 @@ private struct HistoryRow: View {
     let item: Missing
     let onResolve: () -> Void
     let onRequestCheck: () -> Void
+    let onRequestGrounding: () -> Void
+    let onRequestCompassion: () -> Void
+    let onRequestCooldown: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -139,6 +152,44 @@ private struct HistoryRow: View {
                         .buttonStyle(.borderless)
                         .foregroundColor(.purple)
                     }
+                    // v1.x self-soothing: 3 sub-button (per-card 手动)
+                    Button(action: onRequestGrounding) {
+                        Label("5-4-3-2-1", systemImage: "eye")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.blue)
+                    Button(action: onRequestCompassion) {
+                        Label("自我同情", systemImage: "heart.text.square")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.pink)
+                    Button(action: onRequestCooldown) {
+                        Label("分散", systemImage: "shuffle")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.purple)
+                    // v1.x self-soothing: 3 sub-button (per-card 手动)
+                    Button(action: onRequestGrounding) {
+                        Label("5-4-3-2-1", systemImage: "eye")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.blue)
+                    Button(action: onRequestCompassion) {
+                        Label("自我同情", systemImage: "heart.text.square")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.pink)
+                    Button(action: onRequestCooldown) {
+                        Label("分散", systemImage: "shuffle")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.purple)
                 }
             }
         }
