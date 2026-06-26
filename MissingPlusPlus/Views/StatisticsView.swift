@@ -21,6 +21,10 @@ struct StatisticsView: View {
 
                 Divider()
 
+                insightCards
+
+                Divider()
+
                 trendSection
             }
             .padding(12)
@@ -167,6 +171,50 @@ struct StatisticsView: View {
             .map { (who: $0.key, count: $0.value) }
     }
 
+    // MARK: - v1.x anxious-attachment insights (过去 30 天)
+
+    private var last30Days: [Missing] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
+        return store.items.filter { $0.createdAt >= cutoff }
+    }
+
+    /// 卡片 1: 平复率 + 平均平复时长
+    private var waveStats: (rate: Double, count: Int, total: Int, avg: TimeInterval?) {
+        let last = last30Days
+        let total = last.count
+        guard total > 0 else { return (0, 0, 0, nil) }
+        let durations: [TimeInterval] = last.compactMap { item in
+            item.resolvedAt?.timeIntervalSince(item.createdAt)
+        }
+        let count = durations.count
+        let rate = Double(count) / Double(total)
+        let avg = durations.isEmpty ? nil : durations.reduce(0, +) / Double(durations.count)
+        return (rate, count, total, avg)
+    }
+
+    /// 卡片 2: Top 3 trigger
+    private var topTriggers: [(tag: TriggerTag, count: Int, total: Int)] {
+        let last = last30Days
+        let total = last.count
+        guard total > 0 else { return [] }
+        var counts: [TriggerTag: Int] = [:]
+        for item in last {
+            for tag in item.triggerTags { counts[tag, default: 0] += 1 }
+        }
+        return counts.sorted { $0.value > $1.value }
+            .prefix(3)
+            .map { (tag: $0.key, count: $0.value, total: total) }
+    }
+
+    /// 卡片 3: reality check 完成度
+    private var realityCheckStats: (rate: Double, completed: Int, eligible: Int) {
+        let last = last30Days
+        let eligible = last.filter { $0.intensity == .strong }.count
+        guard eligible > 0 else { return (0, 0, 0) }
+        let completed = last.filter { $0.intensity == .strong && $0.realityCheck != nil }.count
+        return (Double(completed) / Double(eligible), completed, eligible)
+    }
+
     // MARK: - chart data
 
     private struct DailyBucket: Identifiable {
@@ -208,6 +256,124 @@ struct StatisticsView: View {
             Mood.sad.label:       MoodColor.forMood(.sad),
             Mood.longing.label:   MoodColor.forMood(.longing),
         ]
+    }
+    // MARK: - v1.x insight cards (3 个)
+
+    private var insightCards: some View {
+        VStack(spacing: 10) {
+            WaveResolvedCard(stats: waveStats)
+            TopTriggersCard(triggers: topTriggers)
+            RealityCheckCard(stats: realityCheckStats)
+        }
+        .padding(.bottom, 4)
+    }
+}
+
+/// 卡片 1: 浪都过去了 — bundle 最核心的 evidence: "想念是有限时的"
+private struct WaveResolvedCard: View {
+    let stats: (rate: Double, count: Int, total: Int, avg: TimeInterval?)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("浪都过去了")
+                .font(.subheadline.weight(.medium))
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(Int((stats.rate * 100).rounded()))%")
+                    .font(.system(size: 36, weight: .semibold, design: .rounded))
+                    .foregroundColor(stats.rate >= 0.8 ? .green : .primary)
+                Text("过去 30 天")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Text(subtitle)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.pink.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var subtitle: String {
+        if stats.total == 0 { return "还没有记录" }
+        if let avg = stats.avg {
+            let hours = avg / 3600
+            if hours < 1 {
+                return "\(stats.count) / \(stats.total) 次平复，平均 \(Int(avg / 60)) 分钟"
+            } else if hours < 48 {
+                return "\(stats.count) / \(stats.total) 次平复，平均 \(String(format: "%.1f", hours)) 小时"
+            } else {
+                return "\(stats.count) / \(stats.total) 次平复，平均 \(String(format: "%.1f", hours / 24)) 天"
+            }
+        } else {
+            return "\(stats.count) / \(stats.total) 次平复"
+        }
+    }
+}
+
+/// 卡片 2: 你的常见 trigger
+private struct TopTriggersCard: View {
+    let triggers: [(tag: TriggerTag, count: Int, total: Int)]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("你的常见 trigger")
+                .font(.subheadline.weight(.medium))
+            if triggers.isEmpty {
+                Text("记几次带 trigger 标签的想念后会看到")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(triggers, id: \.tag) { entry in
+                    HStack {
+                        Text(entry.tag.displayString).font(.callout)
+                        Spacer()
+                        Text("\(entry.count) 次 · \(Int(Double(entry.count) / Double(entry.total) * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    GeometryReader { geo in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.pink.opacity(0.6))
+                            .frame(width: geo.size.width * CGFloat(entry.count) / CGFloat(entry.total))
+                    }
+                    .frame(height: 4)
+                }
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.gray.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+/// 卡片 3: 现实检验完成度
+private struct RealityCheckCard: View {
+    let stats: (rate: Double, completed: Int, eligible: Int)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("现实检验完成度")
+                .font(.subheadline.weight(.medium))
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(Int((stats.rate * 100).rounded()))%")
+                    .font(.title2.weight(.semibold))
+                Text("强烈的想念里")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Text(stats.eligible == 0
+                 ? "还没有强烈的想念需要检验"
+                 : "\(stats.completed) / \(stats.eligible) 次完成 DBT Check the Facts")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.purple.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 
