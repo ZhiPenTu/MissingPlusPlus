@@ -1,0 +1,50 @@
+name: Deploy frontend to Cloudflare
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-deploy:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '25'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Generate manifest
+        id: manifest
+        run: |
+          VERSION="v$(date +%Y.%m.%d.%H%M)"
+          HASH=$(openssl dgst -sha384 -binary dist/index.html | openssl base64 -A)
+          URL="https://app.missingpp.com/frontend/${VERSION}.tar.gz"
+          cat > dist/manifest.json <<EOF
+          {
+            "version": "$VERSION",
+            "min_native_version": "0.1.0",
+            "url": "$URL",
+            "sri": "sha384-${HASH}",
+            "released_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+      - name: Tar bundle
+        run: |
+          cd dist
+          tar czf ../dist.tar.gz .
+          ls -la ../dist.tar.gz
+      - name: Upload to R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          VERSION=$(jq -r .version dist/manifest.json)
+          wrangler r2 object put missingpp-frontend/${VERSION}.tar.gz --file dist.tar.gz
+          wrangler r2 object put missingpp-frontend/manifest.json --file dist/manifest.json
+      - name: Deploy to Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          command: pages deploy dist --project-name missingpp

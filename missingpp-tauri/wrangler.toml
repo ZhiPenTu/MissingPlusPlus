@@ -1,0 +1,9 @@
+name = "missingpp"
+compatibility_date = "2026-06-26"
+
+[[r2_buckets]]
+binding = "FRONTEND"
+bucket_name = "missingpp-frontend"
+
+[env.production]
+routes = ["app.missingpp.com/*"]
