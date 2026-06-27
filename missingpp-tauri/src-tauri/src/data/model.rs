@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
 pub enum Mood {
     Happy,
     Joyful,
@@ -36,6 +37,7 @@ impl Mood {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
 pub enum Intensity {
     None,
     Mild,
@@ -102,6 +104,7 @@ impl TriggerTag {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct RealityCheck {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub evidence_for: Option<String>,
@@ -119,6 +122,7 @@ impl RealityCheck {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Missing {
     pub id: Uuid,
     pub who: String,
@@ -187,8 +191,13 @@ impl<'de> Deserialize<'de> for MissingCompat {
                 .map(|arr| {
                     arr.iter()
                         .filter_map(|t| {
-                            t.as_str()
-                                .and_then(|s| serde_json::from_str::<TriggerTag>(s).ok())
+                            // Each element is a JSON string like "noReply".
+                            // Wrap in quotes so from_str sees a valid JSON string.
+                            t.as_str().and_then(|s| {
+                                serde_json::from_value::<TriggerTag>(
+                                    serde_json::Value::String(s.to_string())
+                                ).ok()
+                            })
                         })
                         .collect()
                 })
@@ -211,5 +220,73 @@ pub struct MissingCompat(pub Missing);
 impl From<MissingCompat> for Missing {
     fn from(m: MissingCompat) -> Self {
         m.0
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regression test: the bug was that `Mood` and `Intensity` had no
+    /// `#[serde(rename_all)]`, so they expected PascalCase (e.g. "Happy",
+    /// "Mild"). The React side sends lowercase ("happy", "mild"), and the
+    /// Swift `missings.json` is also lowercase. Both paths should now work.
+    #[test]
+    fn deserialize_mood_lowercase() {
+        let m: Mood = serde_json::from_str("\"delighted\"").unwrap();
+        assert_eq!(m, Mood::Delighted);
+    }
+
+    #[test]
+    fn deserialize_intensity_lowercase() {
+        let i: Intensity = serde_json::from_str("\"strong\"").unwrap();
+        assert_eq!(i, Intensity::Strong);
+    }
+
+    #[test]
+    fn deserialize_trigger_camelcase() {
+        let t: TriggerTag = serde_json::from_str("\"sawSomething\"").unwrap();
+        assert_eq!(t, TriggerTag::SawSomething);
+    }
+
+    #[test]
+    fn roundtrip_missing_with_lowercase_enums() {
+        // What a real Swift `missings.json` looks like, parsed through
+        // the `Missing` struct directly (no MissingCompat wrapper):
+        let input = r#"{
+            "id": "11111111-1111-1111-1111-111111111111",
+            "who": "苏苏",
+            "mood": "delighted",
+            "intensity": "strong",
+            "createdAt": "2026-06-27T02:00:00Z"
+        }"#;
+        let m: Missing = serde_json::from_str(input).expect("must deserialize");
+        assert_eq!(m.who, "苏苏");
+        assert_eq!(m.mood, Mood::Delighted);
+        assert_eq!(m.intensity, Intensity::Strong);
+        // trigger_tags omitted → defaults to []
+        assert_eq!(m.trigger_tags, Vec::<TriggerTag>::new());
+    }
+
+    /// Verify the file format we write is compatible with what Swift writes
+    /// and what the React Query `useRecords` returns (lowercase, camelCase).
+    #[test]
+    fn serialize_matches_swift_format() {
+        let m = Missing::new(
+            "苏苏".to_string(),
+            Mood::Delighted,
+            Intensity::Strong,
+            vec![TriggerTag::NoReply],
+        );
+        let json = serde_json::to_string(&m).unwrap();
+        // Swift's missings.json has: "mood":"delighted","intensity":"strong","triggerTags":[]
+        // Default Missing serialize uses snake_case for trigger_tags, so we need
+        // the existing `trigger_tags` field on Missing (which the test confirms
+        // survives the round trip). The Swift app's `missings.json` uses
+        // `triggerTags` (camelCase), but the load path goes through MissingCompat
+        // which reads `triggerTags` and falls back to [] otherwise.
+        assert!(json.contains("\"mood\":\"delighted\""), "mood must be lowercase, got: {}", json);
+        assert!(json.contains("\"intensity\":\"strong\""), "intensity must be lowercase, got: {}", json);
     }
 }

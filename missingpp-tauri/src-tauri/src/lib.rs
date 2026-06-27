@@ -7,7 +7,7 @@ mod platform;
 
 use tauri::{Emitter, Manager};
 
-use crate::data::{Persistence, Store};
+use crate::data::{AppPreferences, Persistence, Store};
 use crate::error::AppResult;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,6 +24,7 @@ pub fn run() {
             let persistence = Persistence::new(base_dir)?;
             let store = Store::new(persistence)?;
             app.manage(store);
+            app.manage(AppPreferences::default());
 
             // Subscribe to store:changed events to update tray + emit to React
             let app_handle = app.handle().clone();
@@ -53,6 +54,10 @@ pub fn run() {
             commands::update_triggers,
             commands::delete_missing,
             commands::clear_all_records,
+            commands::post_record_notification,
+            commands::pick_storage_path,
+            commands::reset_storage_path,
+            commands::get_storage_path,
             commands::merge_records,
             commands::replace_records,
         ])

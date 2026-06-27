@@ -34,6 +34,8 @@ impl Persistence {
         self.base_dir.join(name)
     }
 
+    pub fn default_path() -> String { "~/Library/Application Support/MissingPlusPlus/records.json".to_string() }
+
     pub fn records_path(&self) -> PathBuf {
         self.path(RECORDS_FILE)
     }

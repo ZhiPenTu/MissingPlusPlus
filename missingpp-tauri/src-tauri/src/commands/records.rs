@@ -11,14 +11,28 @@ pub fn load_records(store: State<'_, Store>) -> Vec<Missing> {
 
 #[tauri::command]
 pub fn add_missing(
+    app: tauri::AppHandle,
     store: State<'_, Store>,
+    prefs: State<'_, crate::data::AppPreferences>,
     who: String,
     mood: Mood,
     intensity: Intensity,
     trigger_tags: Vec<TriggerTag>,
 ) -> Result<Missing, String> {
     let item = Missing::new(who, mood, intensity, trigger_tags);
-    store.add(item).map_err(|e| e.to_string())
+    store.add(item.clone()).map_err(|e| e.to_string())?;
+
+    // Post notification (per AppPreferences)
+    if prefs.notification_include_triggers || !item.trigger_tags.is_empty() {
+        let _ = crate::commands::post_record_notification(
+            app,
+            store.clone(),
+            item.id,
+            prefs.notification_include_triggers,
+        );
+    }
+
+    Ok(item)
 }
 
 #[tauri::command]
