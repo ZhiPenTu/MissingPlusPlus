@@ -3,6 +3,7 @@
 mod commands;
 mod data;
 mod error;
+mod frontend;
 mod platform;
 
 use tauri::{Emitter, Manager};
@@ -58,6 +59,9 @@ pub fn run() {
             commands::pick_storage_path,
             commands::reset_storage_path,
             commands::get_storage_path,
+            commands::check_frontend_update,
+            commands::apply_frontend_update,
+            commands::get_pending_frontend_update,
             commands::merge_records,
             commands::replace_records,
         ])

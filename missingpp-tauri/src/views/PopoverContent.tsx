@@ -1,4 +1,5 @@
-//! 2-tab popover content (stat / history) — kept lean for peek UX
+//! 2-tab popover content (stat / history) — kept lean for peek UX.
+//! Tab bar matches MenuBarContent's rounded card style.
 
 import { useUI } from '../stores/ui'
 import { HistoryList } from './HistoryList'
@@ -9,12 +10,14 @@ export function PopoverContent() {
   const setTab = useUI(s => s.setTab)
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="flex border-b bg-gray-50">
-        <TabButton active={tab === 'stats'} onClick={() => setTab('stats')}>统计</TabButton>
-        <TabButton active={tab === 'history'} onClick={() => setTab('history')}>历史</TabButton>
+    <div className="h-full flex flex-col bg-gray-100">
+      <div className="px-3 py-2 bg-white border-b border-gray-200">
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
+          <TabButton active={tab === 'stats'} onClick={() => setTab('stats')}>统计</TabButton>
+          <TabButton active={tab === 'history'} onClick={() => setTab('history')}>历史</TabButton>
+        </div>
       </div>
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-hidden">
         {tab === 'stats' && <StatisticsView />}
         {tab === 'history' && <HistoryList />}
       </div>
@@ -28,10 +31,10 @@ function TabButton({ active, onClick, children }: {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 px-3 py-2 text-sm transition-colors ${
+      className={`flex-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
         active
-          ? 'bg-pink-50 text-pink-700 font-medium border-b-2 border-pink-500'
-          : 'text-gray-600 hover:bg-gray-100'
+          ? 'bg-white text-pink-600 font-medium shadow-sm'
+          : 'text-gray-500 hover:text-gray-700'
       }`}
     >
       {children}
