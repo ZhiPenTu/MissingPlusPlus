@@ -11,6 +11,7 @@ use super::persistence::Persistence;
 pub struct Store {
     items: RwLock<Vec<Missing>>,
     persistence: Persistence,
+    on_change: RwLock<Option<Box<dyn Fn() + Send + Sync>>>,
 }
 
 impl Store {
@@ -19,7 +20,13 @@ impl Store {
         Ok(Self {
             items: RwLock::new(items),
             persistence,
+            on_change: RwLock::new(None),
         })
+    }
+
+    /// Register a callback invoked after every mutation (post persist).
+    pub fn on_change<F: Fn() + Send + Sync + 'static>(&self, f: F) {
+        *self.on_change.write().unwrap() = Some(Box::new(f));
     }
 
     /// Snapshot sorted by `created_at` desc.

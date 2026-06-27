@@ -1,13 +1,11 @@
 //! Missing++ library — Tauri 2.x + React 19 shell
-//!
-//! Rust shell that wraps the React frontend. Records persisted to JSON file
-//! with forward-compat decode. Frontend updateable via CDN fallback (C arch).
 
 mod commands;
 mod data;
 mod error;
+mod platform;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 use crate::data::{Persistence, Store};
 use crate::error::AppResult;
@@ -26,6 +24,25 @@ pub fn run() {
             let persistence = Persistence::new(base_dir)?;
             let store = Store::new(persistence)?;
             app.manage(store);
+
+            // Subscribe to store:changed events to update tray + emit to React
+            let app_handle = app.handle().clone();
+            app.state::<Store>().on_change(move || {
+                let _ = app_handle.emit("store:changed", ());
+                #[cfg(target_os = "macos")]
+                {
+                    crate::platform::macos::update_tray_icon(&app_handle);
+                }
+            });
+
+            #[cfg(target_os = "macos")]
+            {
+                use crate::platform::macos;
+                macos::setup_tray(app)?;
+                macos::setup_global_hotkey(app)?;
+                macos::hook_window_close_to_hide(app);
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
