@@ -85,14 +85,16 @@ jobs:
 
       - name: Read CFBundleVersion
         id: bundle
+        # 从源 Info.plist 读 (不是从 built .app)
+        # - build-dmg.sh 把 .app stage 到 dmg-staging 后清掉 $BUILD_DIR,
+        #   built .app 路径在 Read CFBundleVersion step 时已经不存在
+        # - CFBundleShortVersionString / CFBundleVersion 是静态字符串,
+        #   xcodebuild copy 源 plist 到 built .app 时原样保留,
+        #   所以读源 === 读 built, 校验结果一致
         run: |
-          APP="build/DerivedData/Build/Products/Release/MissingPlusPlus.app"
-          if [ ! -d "$APP" ]; then
-            echo "ERROR: built .app not found at $APP"
-            exit 1
-          fi
-          CFBundleShortVersionString=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")
-          CFBundleVersion=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist")
+          PLIST="MissingPlusPlus/Info.plist"
+          CFBundleShortVersionString=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST")
+          CFBundleVersion=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST")
           echo "CFBundleShortVersionString: $CFBundleShortVersionString"
           echo "CFBundleVersion (build): $CFBundleVersion"
           # 校验: tag / input version 必须 == CFBundleShortVersionString
