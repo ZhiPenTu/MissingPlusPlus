@@ -1,7 +1,6 @@
 import SwiftUI
 import AppKit
 import Carbon
-import UserNotifications
 
 /// 菜单栏 app 入口。
 ///
@@ -227,7 +226,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let missing = note.userInfo?["missing"] as? Missing else { return }
         // 状态栏图标 mood 联动
         updateStatusPanelIcon()
-        postRecordNotification(for: missing)
+        // 系统通知走 NotificationService, AppDelegate 不再自己持 UN 代码
+        NotificationService.shared.postRecordNotification(for: missing)
     }
 
     @objc private func handlePrefsChanged(_ note: Notification) {
@@ -243,52 +243,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             panel.orderOut(nil)
             statusPanel = nil
         }
-    }
-
-    // MARK: - 新增记录 → 通知
-
-    private func postRecordNotification(for missing: Missing) {
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
-
-        let who = missing.who.isEmpty ? "TA" : missing.who
-        let title = "想念 \(who)"
-        let attachment = makeMoodAttachment(for: missing.mood)
-        let identifier = "missing-\(missing.id.uuidString)"
-
-        // body 走 AI。AI 关闭/超时/出错 → AIServiceContext.fixedNotificationBody
-        // 自动 fallback 到原来的固定模板,用户无感。
-        // 1.5s timeout (AIService 内部写死) → 通知最多延迟 1.5s,仍比用户感知快。
-        Task { @MainActor in
-            let body = await generateAINotificationBody(for: missing)
-            let content = UNMutableNotificationContent()
-            content.title = title
-            content.body = body
-            if let attachment {
-                content.attachments = [attachment]
-            }
-            let request = UNNotificationRequest(
-                identifier: identifier,
-                content: content,
-                trigger: nil
-            )
-            try? await center.add(request)
-        }
-    }
-
-    private func makeMoodAttachment(for mood: Mood) -> UNNotificationAttachment? {
-        let name = "MenuBarIcon-\(mood.rawValue)"
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png") else {
-            return nil
-        }
-        let tmp = FileManager.default.temporaryDirectory
-            .appendingPathComponent("missingpp-mood-\(UUID().uuidString).png")
-        try? FileManager.default.copyItem(at: url, to: tmp)
-        return try? UNNotificationAttachment(
-            identifier: "mood-\(mood.rawValue)",
-            url: tmp,
-            options: nil
-        )
     }
 
     // MARK: - 全局快捷键 (⌥M)

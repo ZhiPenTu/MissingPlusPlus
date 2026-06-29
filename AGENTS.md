@@ -895,3 +895,46 @@ Release 删掉, 同时把 source 的 get-task-allow 也删。
 - 不要给 MenuBuilder 的 init parameter 设 default value, 涉及 @MainActor API 的 closure (`NSApp.terminate` / `NSApp.showAboutPanel` 等) — Swift 6 strict concurrency 会在 default value 求值时报 warning。让 caller 显式传, 至少 warning 出现在 @MainActor call site 而不是定义处。
 - 不要把 `MenuActionRouter` 做成 protocol + AppDelegate 直接 conform — 一个 NSObject 子类 + 3 个 @objc method 比 protocol conformance 简单, 也省得 SwiftUI lifecycle 反复重建 AppDelegate 时 router 还得重新 wiring。
 - 不要让 MenuBuilder 持 `MissingStore` / `AppPreferences` 引用 — 它是纯菜单构造器, 数据 (`recentWhos`) 从外面传, actions 用 closure 注入, 这样 unit test 不用 mock 任何 store。
+
+## 32. AppDelegate 重构: 抽出 NotificationService (Phase 4)
+
+**目标**: 把 AppDelegate 里"记录新建 → 系统通知"的所有逻辑 (postRecordNotification + makeMoodAttachment) 抽到 `Services/NotificationService.swift`, AppDelegate 不再直接 import / 用 `UNUserNotificationCenter`。
+
+**新增**: `MissingPlusPlus/Services/NotificationService.swift` (75 行)
+
+**设计**: `@MainActor final class NotificationService`, 单例 `shared`。跟 `MissingStore` / `AppPreferences` / `StorageService` / `AIService` 保持一致的"服务是单例"模式。
+
+**职责**:
+- `postRecordNotification(for:)` — auth 申请 + title 拼接 ("想念 {who}") + 提交通知
+- `makeMoodAttachment(for:)` (private) — 复制 mood PNG 到 tmp (sandbox 跨容器 attach 修复)
+- body 走 `generateAINotificationBody` (留在 AIService.swift, AI 内容生成器)
+
+**为什么 `generateAINotificationBody` 不一起搬**:
+- AIService.swift 里是"AI 内容生成器"的集合 (`generateAINotificationBody` / `generateAILetter` / `generateAIRealityCheck`)
+- "AI 生成内容" 跟 "通知投递" 是两件事, NotificationService 调用 AI 生成器来填 body, 但不拥有它
+- 保持 AIService.swift 内聚, 不让通知逻辑污染 AI 模块
+
+**AppDelegate 改动** (322 → 281 行, -41):
+- 删 `postRecordNotification(for:)` — 30 行
+- 删 `makeMoodAttachment(for:)` — 13 行
+- `handleMissingAdded` 里 `postRecordNotification(for: missing)` → `NotificationService.shared.postRecordNotification(for: missing)`
+- 删 `import UserNotifications` (AppDelegate 不再直接用 UN* API)
+
+**项目状态变化**:
+- AppDelegate: 581 → 281 行 (-300, 抽 4 个 controller / service 后)
+- 拆出 4 个文件, 总 479 行 (StatusBar/ + Windows/ + Services/NotificationService)
+
+**`project.pbxproj` 改动** (4 处插入, 沿用 ID 规则 `A/B/D1000012...0E`):
+1. PBXBuildFile 段
+2. PBXFileReference 段
+3. Services group children: 加在 `AIService.swift` 后面 (服务都归这里)
+4. PBXSourcesBuildPhase 段
+
+**验证**: `xcodebuild -configuration Debug build` → `** BUILD SUCCEEDED **`, 零警告零错误。
+
+**保留**: Phase 1/2/3 所有 controller, 通知行为无变化 (auth 弹一次、body 走 AI / fallback、mood 图标 attach、1.5s timeout)。
+
+**「不要做」(新增 §5.1)**:
+- 不要把 `generateAINotificationBody` 从 AIService.swift 搬到 NotificationService.swift — 它是 AI 内容生成器, 跟 `generateAILetter` / `generateAIRealityCheck` 是同一类, 应该住在 AIService.swift。NotificationService 调它来填 body 就好。
+- 不要让 NotificationService 持 `MissingStore` / `AppPreferences` 引用 — 它是"接 Missing 对象, 投递通知"的无状态服务, 数据从外面传进来 (`for missing: Missing` 参数)。持 store 引用会变成第二个 MissingStoreDidAdd observer, 重复触发。
+- 不要把 `UNUserNotificationCenter.requestAuthorization` 抽成单独的 "AuthManager" — 系统自带去重, 重复调也是 no-op, 没必要单独一层。
