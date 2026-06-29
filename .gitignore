@@ -26,3 +26,5 @@ dist/
 
 # Xcode patch backup
 *.pbxproj.bak
+# 临时调试文件 (smoke test 截图, 调试日志)
+tmp/
