@@ -48,6 +48,11 @@ XCODEBUILD_BASE=(
 if [[ -n "${MACOSX_DEPLOYMENT_TARGET:-}" ]]; then
     XCODEBUILD_BASE+=(MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET")
 fi
+# CI 跑无 Mac Development cert, 用 SKIP_SIGNING=1 让脚本走 ad-hoc 跳过签名
+# (本地 build 不传就继续用真 cert + DEVELOPMENT_TEAM 走默认签名)
+if [[ "${SKIP_SIGNING:-}" == "1" ]]; then
+    XCODEBUILD_BASE+=(CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO)
+fi
 # xcodebuild -only-testing 格式: TargetName/ClassName/methodName
 # 用户通常只传 ClassName.methodName, 自动补 Target 前缀
 if [[ -n "$FILTER" ]]; then
