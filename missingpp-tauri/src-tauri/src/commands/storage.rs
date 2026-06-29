@@ -25,7 +25,7 @@ pub async fn pick_storage_path(app: AppHandle) -> Result<Option<String>, String>
 pub fn reset_storage_path() -> String {
     // For v1, default is just the platform's app data dir
     // Tauri Store plugin handles the actual reset
-    "~/.config/MissingPlusPlus/records.json (or platform equivalent)".to_string()
+    "~/Library/Application Support/com.tuzhipeng.MissingPlusPlus/records.json".to_string()
 }
 
 /// Get current storage path.

@@ -12,7 +12,7 @@
 - **Record bundle**（§22）：trigger / resolved / reality check + 3 insight 卡片 + 13 commits
 - **Self-soothing bundle**（§23）：3 sub-sheet + 9 commits
 
-架构**锁死 macOS**（SwiftUI + AppKit），无法覆盖 iOS / Windows / Linux / Android，且**每次更新都要重打包 DMG**。
+架构**锁死 macOS**（SwiftUI + AppKit），无法覆盖 iOS，且**每次更新都要重打包 DMG**。
 
 这一轮用 **Tauri 2.x** 重写，5 个选型已锁死：
 
@@ -28,14 +28,14 @@
 
 **所有现有功能 1:1 保留**（包括 record bundle + self-soothing bundle + 日期分组 + 20 cap + load more + 4 个 sub-button + 17 句 self-compassion + 6 条 cooldown 等所有细节），且：
 
-- 跨 macOS / Windows / Linux / iOS / Android（Tauri 2.x 多平台）
+- **Apple-only**：macOS（主目标）+ iOS（v1 简化单页）；不覆盖 Windows / Linux / Android
 - 前端可热更（部署新 HTML/JS 到 CDN，用户下次启动拿到新版本）
 - 数据可迁移（直接复制旧 Swift app 的 `missings.json` 到 Tauri app 的 storage path）
 - 离线可用（C 架构的 bundled fallback）
 
 ## 3. 非目标
 
-- 不重做 iOS 特定 UI（iOS 端 UI 第一版先 fallback 到简化单页，后续 v2 再做 iOS-native）
+- 不做 iOS-native UI（v1 iOS 走简化单页，复用 macOS web 前端，v2 再考虑 iOS-native）
 - 不动旧 macOS Swift app（`MissingPlusPlus/` 完整保留，作为 baseline）
 - 不引入新的 3rd-party SaaS（除 Cloudflare Pages + R2 + GitHub 之外）
 - 不在 v1 做实时多设备 sync
@@ -72,11 +72,9 @@ missingpp-tauri/
 │       │   ├── manifest.rs       # Manifest schema + parser
 │       │   ├── downloader.rs     # HTTPS 下载 + SRI 校验
 │       │   └── installer.rs      # atomic swap bundled/cache
-│       ├── platform/             # OS-specific
+│       ├── platform/             # Apple-specific
 │       │   ├── mod.rs
-│       │   ├── macos.rs          # NSStatusItem, menu bar, hotkey, dock
-│       │   ├── windows.rs        # system tray
-│       │   └── linux.rs          # AppIndicator
+│       │   └── macos.rs          # NSStatusItem, menu bar, hotkey, dock
 │       └── error.rs
 ├── src/                          # React frontend
 │   ├── App.tsx
@@ -217,9 +215,7 @@ use anyhow::{Result, Context};
 const RECORDS_FILE: &str = "records.json";
 
 pub struct Persistence {
-    /// `~/Library/Application Support/MissingPlusPlus/records.json` on macOS
-    /// `%APPDATA%/MissingPlusPlus/records.json` on Windows
-    /// `~/.config/MissingPlusPlus/records.json` on Linux
+    /// `~/Library/Application Support/com.tuzhipeng.MissingPlusPlus/records.json` on macOS
     /// iOS: app sandbox container
     base_dir: PathBuf,
 }
@@ -697,7 +693,7 @@ React: re-fetch → HistoryList 卡片显示 ✓
 - **Tauri command 异常**：返回 `Result<T, String>`，前端用 React Query 的 error state 显示
 - **storage path 切换**（用户改 storage location）：Rust 端跟 Swift 一样，commands 重新 init Persistence
 - **trigger enum 加新 case**：老 cache JSON 里未知 rawValue 自动过滤
-- **app sandbox**（macOS / iOS）：Tauri 自动处理 entitlements
+- **app sandbox**（macOS / iOS）：Tauri 自动处理 entitlements，存储路径走系统 app data 目录
 
 ## 7. 验证清单
 
@@ -718,7 +714,7 @@ React: re-fetch → HistoryList 卡片显示 ✓
 - [ ] 老 Swift `missings.json` 直接 copy 到 Tauri storage path 能读
 - [ ] 部署新 frontend 到 CDN，启 app 检测到新版，下一次启动用新版
 - [ ] SRI 校验失败不会破坏 app
-- [ ] macOS / Windows / Linux 都能 build
+- [ ] macOS `cargo tauri build` 产出 `.app` + `.dmg`
 
 ## 8. 改动文件
 
@@ -730,7 +726,7 @@ React: re-fetch → HistoryList 卡片显示 ✓
 - `src-tauri/src/data/{model,store,persistence}.rs`
 - `src-tauri/src/commands/{records,preferences,notifications,updater}.rs`
 - `src-tauri/src/frontend/{manifest,downloader,installer}.rs`
-- `src-tauri/src/platform/{macos,windows,linux}.rs`
+- `src-tauri/src/platform/macos.rs`
 - `package.json` + `tsconfig.json` + `vite.config.ts` + `tailwind.config.js` + `index.html`
 - `src/{App,main}.tsx` + `src/index.css`
 - `src/ipc/{tauri,queries}.ts`
@@ -756,7 +752,7 @@ React: re-fetch → HistoryList 卡片显示 ✓
 - 不要在 production 关掉 SRI 校验（防 CDN 攻破）
 - 不要把 records 存到 SQLite（v1 选 A：JSON file，500 records 内无感）
 - 不要在 React Query cache 里存 records 超过 5 分钟（mutation 频繁，cache 容易 stale）
-- 不要给 iOS / Android 端做 native UI（v1 iOS / Android fallback 到简化单页，v2 再做）
+- 不要给 iOS 端做 native UI（v1 iOS 走简化单页，v2 再做 iOS-native）
 - 不要让前端直接读 records.json（必须走 IPC + Rust store 单一真相）
 - 不要在 Rust commands 里同步阻塞超过 100ms（重 IO 用 `tokio::task::spawn_blocking`）
 - 不要把 frontend cache 暴露给文件系统（用户不该手动改）
@@ -768,8 +764,8 @@ React: re-fetch → HistoryList 卡片显示 ✓
 - **C 架构复杂度**：bundled + cache + CDN 三层一致性，bug 难复现，要写 e2e test
 - **Tauri 2.x 还在演进**：插件 API 可能小幅变化，写代码时锁版本（`tauri = "2.0"`，plugins 跟版本）
 - **macOS code signing**：本地 dev 用 ad-hoc，生产分发要 Developer ID（跟旧 Swift app 一样的限制）
-- **iOS / Android**：Tauri 2.x 实验性，可能要绕一些坑
-- **跨平台 menu bar**：Tauri 2 的 system tray 在 macOS / Windows / Linux 都支持，但 iOS / Android 没有 menu bar 概念，v1 iOS 用简化的主窗口
+- **iOS**：Tauri 2.x 实验性，可能要绕一些坑
+- **Apple 平台边界**：Tauri 2 的 system tray 只在 macOS 上有，v1 iOS 用简化的主窗口（无 menu bar / 无 global hotkey）
 - **CSS 主题**：shadcn/ui 默认是 light/dark 双主题，macOS 风格用 light，"思念计数器" pink 强调色从 Swift 直接搬
 - **AGENTS.md**：旧项目 §1-§23 全部适用，新项目会单独建 `missingpp-tauri/AGENTS.md` 记录 Rust / Tauri / React 特定规则（不重复）
 - **迁移路径**：用户可手动 copy `~/Library/Application Support/MissingPlusPlus/missings.json`（旧）到 `~/Library/Application Support/com.tuzhipeng.MissingPlusPlus/records.json`（新，Tauri 沙盒 container），Rust decode 1:1 兼容

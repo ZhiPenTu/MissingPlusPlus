@@ -5,11 +5,14 @@
 ## 1. 项目形态
 
 - 全新项目 `missingpp-tauri/`：Tauri 2.x + React 19 + TypeScript + Rust 1.77+
+- **Apple 平台 only**：macOS（主目标）+ iOS（v1 fallback 简化单页）
 - Bundle ID: `com.tuzhipeng.MissingPlusPlus`（沿用旧 app）
-- 跨平台：macOS / Windows / Linux / iOS / Android（Tauri 2.x 多平台）
-- 存储：`~/Library/Application Support/MissingPlusPlus/` (macOS) / `%APPDATA%/MissingPlusPlus/` (Win) / `~/.config/MissingPlusPlus/` (Linux)
+- 存储（macOS）：`~/Library/Application Support/com.tuzhipeng.MissingPlusPlus/`
+- 存储（iOS）：app sandbox container
 - JSON file persistence（500 records 内无感），不引入 SQLite（v1）
 - frontend C 架构（bundled + CDN 热更），用 Cloudflare Pages + R2 部署
+
+**不要做**：不要给 Windows / Linux / Android 做平台支持 —— 这条已 lock 死。
 
 ## 2. 目录与职责
 
@@ -19,6 +22,8 @@ missingpp-tauri/
 │   ├── src/main.rs                  # 入口
 │   ├── src/data/{model,persistence,store}.rs
 │   ├── src/commands/                # Tauri commands
+│   ├── src/frontend/                # C 架构 frontend updater (bundled + cache + CDN)
+│   ├── src/platform/macos.rs        # menu bar / hotkey / dock
 │   └── tauri.conf.json              # bundle / window / allowlist / frontendDist
 ├── src/                             # React frontend
 │   ├── App.tsx, main.tsx, index.css
@@ -48,6 +53,11 @@ missingpp-tauri/
   - 持久（records）→ Rust store 单一真相
   - 瞬态（form / sheet / tab）→ Zustand（不沾 Rust）
   - Rust 主动 push → `tauri::Manager::emit('store:changed')` → React Query `invalidateQueries`
+- **macOS 平台边界**：
+  - `BaseDirectory::Resource` 找 bundle resources（runtime 拿图标必须用，CARGO_MANIFEST_DIR compile 时才有）
+  - `tauri-plugin-global-shortcut` 在 Builder 注册一次，setup 里只 `on_shortcut` + `register`（重复 register 会 panic "register ⌥M"）
+  - `MenuItemBuilder::with_id(...).build(&app_handle)` builder 模式（避开 `MenuItem::new` 静态 vs builder 歧义）
+  - iOS 端 `target_os = "ios"` 走简化单页（没有 platform::macos），所有 macOS 路径都 `#[cfg(target_os = "macos")]` 包裹
 
 ## 4. Tauri command 命名约定
 
@@ -68,7 +78,7 @@ missingpp-tauri/
 - [ ] 老 `missings.json` 直接 copy 能读
 - [ ] `npm run build` 生成 `dist/`
 - [ ] SRI 校验失败不会破坏 app
-- [ ] macOS / Windows / Linux 都能 build
+- [ ] macOS `cargo tauri build` 产出 `.app` + `.dmg`
 
 ## 6. 不要做（这一轮的）
 
@@ -78,7 +88,10 @@ missingpp-tauri/
 - 不要让前端直接读 records.json（必须走 IPC + Rust store 单一真相）
 - 不要在 Rust commands 里同步阻塞超过 100ms（重 IO 用 `tokio::task::spawn_blocking`）
 - 不要把 frontend cache 暴露给文件系统（用户不该手动改）
-- 不要给 iOS / Android 端做 native UI（v1 iOS / Android fallback 到简化单页，v2 再做）
 - 不要做 trigger 标签用户自定义（沿用 v1 预定义 8 个）
 - 不要在 React Query cache 里存 records 超过 5 分钟（mutation 频繁，cache 容易 stale）
 - 不要用 `cargo tauri dev` 启动时跑 `npm run dev`（Dockerfile.dev 跑容器，避免端口冲突）
+- **不要加 Windows / Linux / Android 平台支持** —— 终极决策 Apple-only
+- **不要给 iOS 端做 native UI**（v1 iOS fallback 简化单页，v2 再做 iOS-native）
+- **不要给 iOS 加全局快捷键**（iOS 没有 menu bar / global hotkey 概念）
+- 不要在 setup hook 里再 `app.handle().plugin(...)` 注册 plugin（plugin 必须在 Builder 注册）

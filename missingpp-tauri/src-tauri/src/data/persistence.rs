@@ -12,10 +12,8 @@ const RECORDS_FILE: &str = "records.json";
 /// Storage for records (and other app data) on disk.
 ///
 /// `base_dir`:
-/// - macOS: `~/Library/Application Support/MissingPlusPlus/`
-/// - Windows: `%APPDATA%/MissingPlusPlus/`
-/// - Linux: `~/.config/MissingPlusPlus/`
-/// - iOS / Android: app sandbox container
+/// - macOS: `~/Library/Application Support/com.tuzhipeng.MissingPlusPlus/`
+/// - iOS: app sandbox container
 pub struct Persistence {
     base_dir: PathBuf,
 }

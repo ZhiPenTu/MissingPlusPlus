@@ -2,11 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans.
 
-**Goal:** 用 Tauri 2.x + React + Rust 完整重写 Missing++，保留所有现有功能，新增跨平台 + 前端热更能力。
+**Goal:** 用 Tauri 2.x + React + Rust 完整重写 Missing++，保留所有现有功能。**Apple-only**（macOS 主目标 + iOS 简化单页），新增前端热更能力。
 
 **Architecture:** Rust shell (5-10MB) + React 19 frontend (Vite + TS + shadcn/ui + Tailwind + Zustand + React Query). Frontend C 架构 (bundled + CDN fallback). JSON file persistence with forward-compat decode.
 
-**Tech Stack:** Rust 1.96 + Tauri 2.x + serde + chrono + uuid + tokio + reqwest + sha2 + tar + flate2. React 19 + TS 5 + Vite 5 + shadcn/ui + Tailwind 4 + Zustand 5 + @tanstack/react-query 5 + @tauri-apps/api 2.
+**Tech Stack:** Rust 1.96 + Tauri 2.x (macOS + iOS targets) + serde + chrono + uuid + tokio + reqwest + sha2 + tar + flate2. React 19 + TS 5 + Vite 5 + shadcn/ui + Tailwind 4 + Zustand 5 + @tanstack/react-query 5 + @tauri-apps/api 2.
+
+**Bundle targets:** `app` + `dmg`（macOS only，no Windows MSI / Linux AppImage / iOS IPA in v1）。
 
 **Spec:** `docs/superpowers/specs/2026-06-26-tauri-rewrite-design.md`
 
@@ -20,7 +22,7 @@
 ## Task 6: Tauri commands (records 全部)
 ## Task 7: Tauri commands (preferences + notifications + window)
 ## Task 8: Tauri commands (frontend updater)
-## Task 9: System tray + global hotkey
+## Task 9: macOS system tray + ⌥M global hotkey
 ## Task 10: React app scaffold (Vite + shadcn + Zustand + React Query)
 ## Task 11: Domain types + UI store
 ## Task 12: NewMissingForm view
@@ -33,5 +35,6 @@
 ## Task 19: Build & deploy pipeline (GitHub Actions + wrangler)
 ## Task 20: 迁移老 Swift records.json (文档化)
 ## Task 21: AGENTS.md + 最终验证
+## Task 22: Apple-only 清理（删 Windows / Linux / Android 平台代码）
 
 (详细 task 内容见 git history / 各 task commit message)

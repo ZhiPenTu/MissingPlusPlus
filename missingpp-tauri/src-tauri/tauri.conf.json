@@ -25,13 +25,15 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "app",
+      "dmg"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/icon.icns"
     ],
     "resources": [
       "icons/MenuBarIcon.png",
@@ -40,6 +42,12 @@
       "icons/MenuBarIcon-delighted.png",
       "icons/MenuBarIcon-sad.png",
       "icons/MenuBarIcon-longing.png"
-    ]
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.0"
+    },
+    "category": "Productivity",
+    "shortDescription": "焦虑型依恋人格的记录 + 自我安抚菜单栏 app",
+    "longDescription": "Missing++ 是面向焦虑型依恋人格的 macOS 菜单栏 app：记录想念的浪、累积平复证据、3 个 DBT sub-sheet 在浪来时接住你。"
   }
 }
