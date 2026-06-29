@@ -24,7 +24,10 @@ SCHEME="MissingPlusPlus"
 CONFIG="Release"
 BUILD_DIR="$PROJECT_DIR/build"
 DIST_DIR="$PROJECT_DIR/dist"
-DMG_NAME="MissingPlusPlus-1.0.dmg"
+# VERSION 默认 1.0 (本地 build / dev 用)。release workflow 通过 env var 传入。
+# 例子: VERSION=1.2.3 ./scripts/build-dmg.sh → MissingPlusPlus-1.2.3.dmg
+VERSION="${VERSION:-1.0}"
+DMG_NAME="MissingPlusPlus-${VERSION}.dmg"
 VOL_NAME="Missing++"
 STAGE_DIR="$BUILD_DIR/dmg-staging"
 NOTARY_PROFILE="${NOTARY_PROFILE:-missingpp-notary}"

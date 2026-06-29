@@ -1,0 +1,139 @@
+name: Release DMG
+
+on:
+  # tag push: git tag v1.2.3 && git push origin v1.2.3 触发
+  push:
+    tags:
+      - 'v*.*.*'
+  # 手动 dispatch: GitHub Actions 页面点 'Run workflow', 输入 version (e.g. 1.2.3)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 1.2.3, must match CFBundleShortVersionString in Info.plist)'
+        required: true
+        type: string
+
+# 创建 GitHub Release 需要写权限
+permissions:
+  contents: write
+
+# release 不能中途取消, 用 serialize (不是 cancel-in-progress)
+concurrency:
+  group: missingpp-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build DMG + Create GitHub Release
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拿全部 git history, git describe / changelog 需要
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+        # macos-14 runner 默认 Xcode 15.4, 选具体版本避免 runner 升级飘 build
+
+      - name: Cache DerivedData
+        uses: actions/cache@v4
+        with:
+          path: build/DerivedData
+          key: deriveddata-release-${{ runner.os }}-${{ hashFiles('MissingPlusPlus.xcodeproj/project.pbxproj') }}
+          # pbxproj 改了 (新增文件 / 改 build setting) 缓存失效
+          restore-keys: |
+            deriveddata-release-${{ runner.os }}-
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # tag push: 从 GITHUB_REF_NAME (e.g. refs/tags/v1.2.3) 取去掉 'v' 前缀
+            VERSION="${GITHUB_REF_NAME#v}"
+            echo "Source: git tag v$VERSION"
+          else
+            # workflow_dispatch: 直接用 inputs.version
+            VERSION="${{ inputs.version }}"
+            echo "Source: manual dispatch input"
+          fi
+          echo "Resolved version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build DMG
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/build-dmg.sh
+        # build-dmg.sh 接受 VERSION env var → 命名 MissingPlusPlus-$VERSION.dmg
+        # 默认 VERSION=1.0 (本地 build) / CI 通过 env 传入
+
+      - name: Verify DMG
+        run: |
+          DMG="dist/MissingPlusPlus-${{ steps.version.outputs.version }}.dmg"
+          if [ ! -f "$DMG" ]; then
+            echo "ERROR: DMG not found at $DMG"
+            ls -la dist/ || true
+            exit 1
+          fi
+          echo "DMG size: $(du -h "$DMG" | cut -f1)"
+          echo "SHA256:"
+          shasum -a 256 "$DMG"
+
+      - name: Read CFBundleVersion
+        id: bundle
+        run: |
+          APP="build/DerivedData/Build/Products/Release/MissingPlusPlus.app"
+          if [ ! -d "$APP" ]; then
+            echo "ERROR: built .app not found at $APP"
+            exit 1
+          fi
+          CFBundleShortVersionString=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")
+          CFBundleVersion=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist")
+          echo "CFBundleShortVersionString: $CFBundleShortVersionString"
+          echo "CFBundleVersion (build): $CFBundleVersion"
+          # 校验: tag / input version 必须 == CFBundleShortVersionString
+          # 防止 release v1.2.0 但 app 实际是 1.0.0 的错位
+          if [ "${{ steps.version.outputs.version }}" != "$CFBundleShortVersionString" ]; then
+            echo "::error::version mismatch"
+            echo "  expected (tag/input): ${{ steps.version.outputs.version }}"
+            echo "  actual (CFBundleShortVersionString): $CFBundleShortVersionString"
+            echo ""
+            echo "Fix: bump CFBundleShortVersionString in MissingPlusPlus/Info.plist to '${{ steps.version.outputs.version }}',"
+            echo "or use a different tag/inputs.version that matches the current build."
+            exit 1
+          fi
+          echo "version=$CFBundleShortVersionString" >> "$GITHUB_OUTPUT"
+          echo "build=$CFBundleVersion" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.version.outputs.version }}
+          body: |
+            ## Missing++ v${{ steps.version.outputs.version }}
+
+            自动 build (CFBundleVersion: ${{ steps.bundle.outputs.build }}).
+
+            ### 安装
+            下载 `MissingPlusPlus-${{ steps.version.outputs.version }}.dmg`, 打开后拖 `MissingPlusPlus.app` 到 Applications。
+
+            ### 签名状态
+            当前 **ad-hoc 签名** (本地用)。正式分发需要 Developer ID + 公证,
+            详见 `AGENTS.md` §7 打包 + §9 Developer ID 签名。
+
+            ### SHA256
+            见 attached file。
+          files: dist/MissingPlusPlus-${{ steps.version.outputs.version }}.dmg
+          draft: true  # 默认 draft, 用户手动 review + publish
+          fail_on_unmatched_files: true
+          generate_release_notes: true  # 从 merged PRs 自动生成 release notes
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "## Release v${{ steps.version.outputs.version }} built" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- DMG: \`dist/MissingPlusPlus-${{ steps.version.outputs.version }}.dmg\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- CFBundleVersion: ${{ steps.bundle.outputs.build }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Draft release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
