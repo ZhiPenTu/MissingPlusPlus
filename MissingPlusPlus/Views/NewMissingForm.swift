@@ -17,8 +17,13 @@ struct NewMissingForm: View {
     /// v1.x self-soothing: mild submit 后 5 秒显示 "想冷静一下？" inline link。
     @State private var showSoothingLink: Bool = false
     @State private var pendingGrounding = false
-    @State private var pendingCompassion = false
+    @State private var pendingCompassion: Missing?
+    /// 「致 TA 的话」 sheet 触发器。和 pendingCompassion 同样的 pattern。
+    @State private var pendingLetter: Missing?
     @State private var pendingCooldown = false
+    /// 刚提交的那一条 missing,用于让 "想冷静一下" 的 inline link 把 context 传给
+    /// SelfCompassionView / LetterToThemView。Submit 时设置,新一条 submit 覆盖。
+    @State private var latestSubmitted: Missing?
 
     private var trimmedWho: String {
         who.trimmingCharacters(in: .whitespaces)
@@ -73,7 +78,8 @@ struct NewMissingForm: View {
             }
         }
         .sheet(isPresented: $pendingGrounding) { GroundingSheet() }
-        .sheet(isPresented: $pendingCompassion) { SelfCompassionView() }
+        .sheet(item: $pendingCompassion) { record in SelfCompassionView(missing: record) }
+        .sheet(item: $pendingLetter) { record in LetterToThemView(missing: record) }
         .sheet(isPresented: $pendingCooldown) { CooldownSheet(prefs: AppPreferences.shared) }
     }
 
@@ -97,7 +103,7 @@ struct NewMissingForm: View {
                     .foregroundColor(.blue)
                     .help("5-4-3-2-1 grounding")
                     Button {
-                        pendingCompassion = true
+                        pendingCompassion = latestSubmitted
                     } label: {
                         Image(systemName: "heart.text.square")
                             .font(.callout)
@@ -114,6 +120,15 @@ struct NewMissingForm: View {
                     .buttonStyle(.borderless)
                     .foregroundColor(.purple)
                     .help("分散注意力")
+                    Button {
+                        pendingLetter = latestSubmitted
+                    } label: {
+                        Image(systemName: "paperplane")
+                            .font(.callout)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.indigo)
+                    .help("给 TA 写封信")
                 }
                 .padding(8)
                 .background(
@@ -274,6 +289,7 @@ struct NewMissingForm: View {
             triggerTags: Array(selectedTriggers).sorted { $0.rawValue < $1.rawValue }
         )
         store.add(entry)
+        latestSubmitted = entry
 
         // v1.x: intensity == strong + setting 开 → 弹 RealityCheckSheet。
         // 一旦弹了（pendingRealityCheck 被 set），sheet dismiss 时 SwiftUI

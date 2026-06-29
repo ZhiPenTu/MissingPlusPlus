@@ -14,7 +14,7 @@ struct RealityCheckSheet: View {
     @Environment(\.dismiss) private var dismiss
     // v1.x self-soothing: 3 个 sub-button 触发对应 sub-sheet
     @State private var pendingGrounding = false
-    @State private var pendingCompassion = false
+    @State private var pendingCompassion: Missing?
     @State private var pendingCooldown = false
 
     var body: some View {
@@ -74,7 +74,7 @@ struct RealityCheckSheet: View {
                 .foregroundColor(.blue)
                 .help("5-4-3-2-1 grounding")
                 Button {
-                    pendingCompassion = true
+                    pendingCompassion = missing
                 } label: {
                     Image(systemName: "heart.text.square")
                         .font(.callout)
@@ -97,7 +97,7 @@ struct RealityCheckSheet: View {
         .padding(20)
         .frame(width: 420)
         .sheet(isPresented: $pendingGrounding) { GroundingSheet() }
-        .sheet(isPresented: $pendingCompassion) { SelfCompassionView() }
+        .sheet(item: $pendingCompassion) { _ in SelfCompassionView(missing: missing) }
         .sheet(isPresented: $pendingCooldown) { CooldownSheet(prefs: AppPreferences.shared) }
     }
 

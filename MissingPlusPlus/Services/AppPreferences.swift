@@ -65,8 +65,53 @@ final class AppPreferences: ObservableObject {
         }
     }
 
+    /// AI 增强总开关。false → 走现有 hardcoded 文本（SelfCompassion 17 句 / 通知固定模板 / 3 封备选信）。
+    @Published var aiEnabled: Bool {
+        didSet {
+            defaults.set(aiEnabled, forKey: Keys.aiEnabled)
+        }
+    }
+    /// OpenAI 兼容协议的 base url，结尾 /v1 或不带都行，AIService 内部归一化。
+    @Published var aiBaseURL: String {
+        didSet {
+            defaults.set(aiBaseURL, forKey: Keys.aiBaseURL)
+        }
+    }
+    /// 调用的模型名，例如 "gpt-4o-mini"、"deepseek-chat"、"qwen-turbo"。
+    @Published var aiModel: String {
+        didSet {
+            defaults.set(aiModel, forKey: Keys.aiModel)
+        }
+    }
+    /// 0.0 - 2.0，越高越发散。0.85 是写文案比较合适的中间值。
+    @Published var aiTemperature: Double {
+        didSet {
+            defaults.set(aiTemperature, forKey: Keys.aiTemperature)
+        }
+    }
+    /// 单次请求最大 token，控制成本 + 防止跑飞。
+    @Published var aiMaxTokens: Int {
+        didSet {
+            defaults.set(aiMaxTokens, forKey: Keys.aiMaxTokens)
+        }
+    }
+    /// 单次请求 timeout 秒。0.8s - 2.0s 是文案场景的合理区间。
+    @Published var aiRequestTimeout: Double {
+        didSet {
+            defaults.set(aiRequestTimeout, forKey: Keys.aiRequestTimeout)
+        }
+    }
+    /// API key 不存在 UserDefaults，单独走 Keychain。account 名固定。
+    static let aiKeychainAccount = "openai"
+
     private let defaults = UserDefaults.standard
     private enum Keys {
+        static let aiEnabled = "AIEnabled"
+        static let aiBaseURL = "AIBaseURL"
+        static let aiModel = "AIModel"
+        static let aiTemperature = "AITemperature"
+        static let aiMaxTokens = "AIMaxTokens"
+        static let aiRequestTimeout = "AIRequestTimeout"
         static let showStatusItem = "ShowStatusItem"
         static let menuBarIconStyle = "MenuBarIconStyle"
         static let hasSeenDragHint = "HasSeenDragHint"
@@ -89,6 +134,36 @@ final class AppPreferences: ObservableObject {
             defaults.object(forKey: Keys.notificationIncludeTriggers) as? Bool ?? true
         self.cooldownActivities =
             defaults.stringArray(forKey: Keys.cooldownActivities) ?? []
+        self.aiEnabled =
+            defaults.object(forKey: Keys.aiEnabled) as? Bool ?? false
+        self.aiBaseURL =
+            defaults.string(forKey: Keys.aiBaseURL) ?? "https://api.openai.com/v1"
+        self.aiModel =
+            defaults.string(forKey: Keys.aiModel) ?? "gpt-4o-mini"
+        self.aiTemperature = defaults.object(forKey: Keys.aiTemperature) as? Double ?? 0.85
+        self.aiMaxTokens = defaults.object(forKey: Keys.aiMaxTokens) as? Int ?? 200
+        self.aiRequestTimeout = defaults.object(forKey: Keys.aiRequestTimeout) as? Double ?? 2.0
+    }
+
+    // MARK: - API key (Keychain)
+
+    /// API key 存 Keychain，外部读写都走这里。
+    var aiAPIKey: String? {
+        get { KeychainService.shared.get(account: Self.aiKeychainAccount) }
+        set {
+            if let v = newValue, !v.isEmpty {
+                KeychainService.shared.set(v, account: Self.aiKeychainAccount)
+            } else {
+                KeychainService.shared.delete(account: Self.aiKeychainAccount)
+            }
+        }
+    }
+
+    /// AI 是否真的可用（开关 + 有 key + base url 非空）。Settings 显示状态灯用。
+    var aiIsConfigured: Bool {
+        aiEnabled
+            && !(aiBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            && !((aiAPIKey ?? "").isEmpty)
     }
 }
 

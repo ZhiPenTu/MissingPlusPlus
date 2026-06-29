@@ -162,7 +162,7 @@ struct HistoryList: View {
             }
         }
         .sheet(item: $pendingGrounding) { _ in GroundingSheet() }
-        .sheet(item: $pendingCompassion) { _ in SelfCompassionView() }
+        .sheet(item: $pendingCompassion) { record in SelfCompassionView(missing: record) }
         .sheet(item: $pendingCooldown) { _ in CooldownSheet(prefs: AppPreferences.shared) }
     }
 
