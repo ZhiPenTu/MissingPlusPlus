@@ -42,6 +42,9 @@
 		A1000013000000000000A001 /* ActiveStateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000013000000000000A001 /* ActiveStateControllerTests.swift */; };
 		A1000014000000000000A001 /* MenuBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000014000000000000A001 /* MenuBuilderTests.swift */; };
 		A1000015000000000000A001 /* WindowControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000015000000000000A001 /* WindowControllerTests.swift */; };
+		A1000019000000000000A001 /* StatusPanelControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000019000000000000A001 /* StatusPanelControllerTests.swift */; };
+		A100001A000000000000A001 /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A000000000000A001 /* NotificationServiceTests.swift */; };
+		A100001B000000000000A001 /* HotKeyControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001B000000000000A001 /* HotKeyControllerTests.swift */; };
 		A1000012000000000000A00C /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00C /* WindowController.swift */; };
 		A1000012000000000000A00D /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00D /* MenuBuilder.swift */; };
 		A1000012000000000000A00E /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00E /* NotificationService.swift */; };
@@ -101,6 +104,9 @@
 		B1000013000000000000A001 /* ActiveStateControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveStateControllerTests.swift; sourceTree = "<group>"; };
 		B1000014000000000000A001 /* MenuBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilderTests.swift; sourceTree = "<group>"; };
 		B1000015000000000000A001 /* WindowControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowControllerTests.swift; sourceTree = "<group>"; };
+		B1000019000000000000A001 /* StatusPanelControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPanelControllerTests.swift; sourceTree = "<group>"; };
+		B100001A000000000000A001 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
+		B100001B000000000000A001 /* HotKeyControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyControllerTests.swift; sourceTree = "<group>"; };
 		B0000050000000000000A001 /* MissingPlusPlusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MissingPlusPlusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -252,6 +258,9 @@
 				B1000013000000000000A001 /* ActiveStateControllerTests.swift */,
 				B1000014000000000000A001 /* MenuBuilderTests.swift */,
 				B1000015000000000000A001 /* WindowControllerTests.swift */,
+				B1000019000000000000A001 /* StatusPanelControllerTests.swift */,
+				B100001A000000000000A001 /* NotificationServiceTests.swift */,
+				B100001B000000000000A001 /* HotKeyControllerTests.swift */,
 			);
 			path = MissingPlusPlusTests;
 			sourceTree = "<group>";
@@ -412,6 +421,9 @@
 				A1000013000000000000A001 /* ActiveStateControllerTests.swift in Sources */,
 				A1000014000000000000A001 /* MenuBuilderTests.swift in Sources */,
 				A1000015000000000000A001 /* WindowControllerTests.swift in Sources */,
+				A1000019000000000000A001 /* StatusPanelControllerTests.swift in Sources */,
+				A100001A000000000000A001 /* NotificationServiceTests.swift in Sources */,
+				A100001B000000000000A001 /* HotKeyControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

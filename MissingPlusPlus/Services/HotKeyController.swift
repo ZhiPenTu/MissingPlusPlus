@@ -32,13 +32,15 @@ final class HotKeyController {
         case optionM
         case custom(keyCode: UInt32, modifiers: UInt32)
 
-        fileprivate var carbonKeyCode: UInt32 {
+        // internal (不是 fileprivate) 是为了让 MissingPlusPlusTests 测 — test
+        // 直接调 spec.carbonKeyCode / carbonModifiers 验 Spec enum 映射
+        var carbonKeyCode: UInt32 {
             switch self {
             case .optionM: return UInt32(kVK_ANSI_M)
             case .custom(let keyCode, _): return keyCode
             }
         }
-        fileprivate var carbonModifiers: UInt32 {
+        var carbonModifiers: UInt32 {
             switch self {
             case .optionM: return UInt32(optionKey)
             case .custom(_, let modifiers): return modifiers

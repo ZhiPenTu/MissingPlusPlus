@@ -1197,3 +1197,65 @@ init(
 - 不要让 `run_tests.sh` 用 `tail -1` 之类的取 BUILD result 字符串解析 — 失败时直接 tail 末尾 60 行重新打出来, 人类能读懂, 解析反而脆弱。
 - 不要 hard-code 路径里的 `~/Library/...` 或 `$HOME` — 走脚本所在目录的相对路径 (`cd "$(dirname "${BASH_SOURCE[0]}")/.."`), 任何用户 clone 下来都能直接用。
 - 不要在 `--logs` / `--debug` 模式里用 `&` 后台启动 app 再 attach — `open -n` + `pgrep` + attach 是同步链, 出问题容易 stuck; 让脚本是 foreground 用户能 Ctrl-C 退出。
+
+## 38. 给 3 个 observer-based controller 加测试 (Phase 10)
+
+**目标**: Phase 8 加了 14 个测试覆盖 3 个 controller (ActiveStateController / MenuBuilder / WindowController)。剩 3 个 observer-based controller (StatusPanelController / NotificationService / HotKeyController) 当时没测 —— 这轮补齐。
+
+**新增测试** (3 个文件, 19 个 test, 总数 14 → 33):
+- `StatusPanelControllerTests.swift` (5 tests) — install/uninstall 状态机 + prefs 变化响应 + 多次 toggle 不重复创建
+- `NotificationServiceTests.swift` (7 tests) — attachment 创建 + identifier + 文件复制 + postRecordNotification smoke
+- `HotKeyControllerTests.swift` (7 tests) — Spec enum 映射 + Carbon 修饰键 mask + 实际 init 不 crash
+
+**为了让测试能访问 production code,做了 2 处小 refactor**:
+1. `NotificationService.makeMoodAttachment(for:)` — `private func` → `internal static func`
+   - 测试直接调 `NotificationService.makeMoodAttachment(for: .happy)` 验文件复制, 不依赖 UN 投递链路
+   - 内部调用改成 `Self.makeMoodAttachment(...)`
+2. `HotKeyController.Spec.carbonKeyCode/carbonModifiers` — `fileprivate` → `internal`
+   - 测试直接验 Spec enum 映射 (`.optionM` 对应 `kVK_ANSI_M` + `optionKey`)
+
+**为什么这 2 处 refactor 是必要的**:
+- 测试用 `@testable import MissingPlusPlus` 能访问 `internal` 但不能访问 `private` / `fileprivate`
+- `makeMoodAttachment` 是纯函数 (无副作用 except 写 tmp), 适合直接测
+- `Spec` 的属性也是纯计算, 没暴露给测试就只能绕路 (测 init 行为间接推断, 不如直接验)
+- refactor 不会破坏 production 行为, 只是把可见性从 "只有自己能用" 扩到 "同 module + test target 都能用"
+
+**StatusPanelController 测试策略**:
+- 操纵 `AppPreferences.shared.showStatusItem` 触发 didSet (写 defaults + post .appPreferencesDidChange)
+- 检测 `NSApp.windows.contains { $0 is StatusItemPanel && $0.isVisible }` 验 panel 状态
+- setUp / tearDown 保存 + 还原 prefs, 调 `dismissAllStatusPanels()` 收尾
+
+**NotificationService 测试策略**:
+- `makeMoodAttachment` 直接调 (已经是 internal static), 验附件 identifier 格式 + tmp 路径 + 文件存在
+- `postRecordNotification` smoke 测不 crash + 验证 .empty who → "TA" fallback 路径
+
+**HotKeyController 测试策略**:
+- `Spec.optionM` 映射到 `kVK_ANSI_M` + `optionKey` 的 Carbon 常量
+- Carbon 修饰键 mask (cmdKey=256, shiftKey=512, controlKey=4096, optionKey=2048)
+- init 不 crash (验证 Carbon InstallEventHandler + RegisterEventHotKey 不抛)
+
+**踩过的坑** (这轮新加):
+1. **pbxproj 只加 PBXSourcesBuildPhase 不够** — Phase 10 第一次只改了 build phase, build 还是只编译 3 个老 test。完整 pbxproj 注册需要 4 处: PBXBuildFile + PBXFileReference + group children + build phase。光 build phase 编译系统认为 file ref 不存在, 跳过。修法: 跟 Phase 8 一样, 4 处都加。
+2. **Spec.carbonKeyCode 是 `fileprivate`** — 改成 `internal` 才能 `@testable` 访问。
+3. **`kVK_ANSI_Space` 找不到** — `Carbon` import 在 Swift module map 里不包括 HIToolbox/Events.h 里的 ANSI 系列 keys, 只有 `kVK_Space` 这种短的能用。改用 `kVK_Space`。
+4. **cmdKey | optionKey 类型不匹配** — Carbon 常量是 `Int`, Spec 期望 `UInt32`, 加显式 cast `UInt32(cmdKey | optionKey)`。
+5. **Test 误判 filename 包含 mood name** — `makeMoodAttachment` 实际只生成 `missingpp-mood-{UUID}.png`, 不带 mood name。删掉那条 assertion。
+
+**验证**:
+- `xcodebuild -configuration Debug build` → `** BUILD SUCCEEDED **`
+- `./scripts/run_tests.sh` → `** TEST SUCCEEDED **`, 33/33 pass
+  - ActiveStateControllerTests: 4/4
+  - HotKeyControllerTests: 7/7
+  - MenuBuilderTests: 6/6
+  - NotificationServiceTests: 7/7
+  - StatusPanelControllerTests: 5/5
+  - WindowControllerTests: 4/4
+
+**保留**: 现有 production 行为无变化 (refactor 1 改 internal static, 调用处改成 `Self.makeMoodAttachment(...)`; refactor 2 改 fileprivate → internal, 不动逻辑)。7 个 controller / service 现在全部有 unit test 覆盖。
+
+**「不要做」(新增 §5.1)**:
+- 不要在 pbxproj 里只加 PBXSourcesBuildPhase 而漏 PBXBuildFile / PBXFileReference / group children — build system 会认为 file ref 不存在, 跳过编译。完整 4 处必须同时改。
+- 不要给 HotKeyController.Spec 加 Carbon HIToolbox 之外依赖 — 改 `Spec.carbonKeyCode/carbonModifiers` 可见性比在测试里 mock Carbon 调用链简单得多。
+- 不要让 StatusPanelController test 留 panel 可见 — 每个 test 的 setUp/tearDown 都调 `dismissAllStatusPanels()`, 否则 test runner 屏幕会越积越多幽灵 panel。
+- 不要给 `NotificationService.postRecordNotification` 写"验证 UN 投递成功"的测试 — `UNUserNotificationCenter` 是 process singleton, 没有公开 API 验 "request was added successfully" (除了 try? await), 测试环境投递会真发通知, 干扰 dev 体验。Smoke 测不 crash 就够了。
+- 不要给 HotKeyController 写"验证 ⌥M 真的注册成功"的测试 — Carbon EventHotKey 没有公开 API 反查当前 hotkey 绑定, 只能 init 不 crash 作为 smoke。

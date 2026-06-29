@@ -32,7 +32,7 @@ final class NotificationService {
 
         let who = missing.who.isEmpty ? "TA" : missing.who
         let title = "想念 \(who)"
-        let attachment = makeMoodAttachment(for: missing.mood)
+        let attachment = Self.makeMoodAttachment(for: missing.mood)
         let identifier = "missing-\(missing.id.uuidString)"
 
         // body 走 AI。AI 关闭/超时/出错 → AIServiceContext.fixedNotificationBody
@@ -58,7 +58,11 @@ final class NotificationService {
     /// 复制 mood 的菜单栏 PNG 到 tmp 目录,再 attach。
     /// sandbox 下直接 attach `Bundle.main.url` 会被系统拒 (B6 跨容器),
     /// 复制到 `NSTemporaryDirectory` 后用副本路径就 OK。
-    private func makeMoodAttachment(for mood: Mood) -> UNNotificationAttachment? {
+    ///
+    /// `internal static` (不是 private) 是为了给 MissingPlusPlusTests 测 —
+    /// 测试直接调 `NotificationService.makeMoodAttachment(for:)` 验文件
+    /// 复制 + attachment 创建,不依赖 UNUserNotificationCenter 投递链路。
+    internal static func makeMoodAttachment(for mood: Mood) -> UNNotificationAttachment? {
         let name = "MenuBarIcon-\(mood.rawValue)"
         guard let url = Bundle.main.url(forResource: name, withExtension: "png") else {
             return nil
