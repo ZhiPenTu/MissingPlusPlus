@@ -36,16 +36,22 @@ struct MenuBarContent: View {
                         .background(Color(NSColor.windowBackgroundColor))
                 case .stats:
                     StatisticsView(store: store)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color(NSColor.windowBackgroundColor))
                 case .history:
                     HistoryList(store: store)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color(NSColor.windowBackgroundColor))
                 }
             }
-            // 顶部对齐 — 不 fill maxHeight，否则 NewMissingForm 居中
-            // 渲染（Group 默认 .center 对齐），tab bar 下方留 164pt 空
-            // 看起来"主窗口布局乱"
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            // **关键**: maxHeight: .infinity 让 Group 撑满外层 VStack 剩余空间
+            // (720 - tabBar 50 - Divider 1 = 669pt)。否则 HistoryList 的 VStack
+            // 自然高度只有 ~130pt, 但 Group 在 720pt 的 VStack 里被推到底部,
+            // "最近 / 搜索 / 空态" 整体被甩到窗口底部, 中间一大段白。
+            // NewMissingForm / StatisticsView 内部已经自己 fill maxHeight,
+            // 这里加 maxHeight: .infinity 主要是给 HistoryList 用, 让它
+            // 内部能用 Spacer() 把空态垂直居中。
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(width: 360, height: 720)
     }

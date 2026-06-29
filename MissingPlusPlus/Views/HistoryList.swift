@@ -105,7 +105,12 @@ struct HistoryList: View {
             .padding(.bottom, 8)
 
             if filtered.isEmpty {
+                // v2 layout: Spacer 把空态推到 HistoryList 可用空间居中位置
+                // (依赖 MenuBarContent 那边给 .frame(maxHeight: .infinity))。
+                // 旧版没 Spacer + Group 自然高度 → 空态贴窗口底部, 中间一大段白。
+                Spacer(minLength: 24)
                 emptyState
+                Spacer(minLength: 24)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
