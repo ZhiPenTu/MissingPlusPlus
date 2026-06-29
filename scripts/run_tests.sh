@@ -46,7 +46,7 @@ XCODEBUILD_BASE=(
 # (Xcode 拒绝: 'My Mac doesn't match macOS 26.0 deployment target')
 # CI 环境变量 MACOSX_DEPLOYMENT_TARGET 会覆盖, 本地 build 不传就走工程默认
 if [[ -n "${MACOSX_DEPLOYMENT_TARGET:-}" ]]; then
-    XCODEBUILD_BASE+=(MACOSX_DEPLOYMENT_TARGET:"$MACOSX_DEPLOYMENT_TARGET")
+    XCODEBUILD_BASE+=(MACOSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET")
 fi
 # xcodebuild -only-testing 格式: TargetName/ClassName/methodName
 # 用户通常只传 ClassName.methodName, 自动补 Target 前缀
