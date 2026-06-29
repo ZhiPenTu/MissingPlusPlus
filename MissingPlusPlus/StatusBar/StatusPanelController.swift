@@ -20,7 +20,6 @@ import AppKit
 @MainActor
 final class StatusPanelController {
     private var panel: StatusItemPanel?
-    private var statusMenu: NSMenu?
 
     /// 拖动 x 坐标持久化 key。UserDefaults 0 表示没存过 (默认走 60% 处)。
     private static let panelXKey = "MissingPlusPlusStatusPanelX"
@@ -72,7 +71,6 @@ final class StatusPanelController {
                 updateIcon()
             }
         } else if let p = panel {
-            statusMenu = nil
             p.orderOut(nil)
             panel = nil
         }
@@ -84,10 +82,11 @@ final class StatusPanelController {
         let p = StatusItemPanel()
         p.content.clickTarget = self
         p.content.clickSelector = #selector(statusPanelClicked)
-        p.content.onDragEnd = { [weak self, weak p] in
+        p.content.onDragEnd = { [weak p] in
             guard let x = p?.frame.origin.x else { return }
             UserDefaults.standard.set(Double(x), forKey: Self.panelXKey)
-            self?.position()  // 触发布局 sanity check
+            // 拖动时已经写过 setFrameOrigin, 这里只持久化 x, 不再 position() —
+            // 重新读 UserDefaults 再 setFrameOrigin 同一 x 是 no-op
         }
         position(panel: p)
         p.orderFront(nil)
@@ -151,15 +150,14 @@ final class StatusPanelController {
                 self?.onOpenMain()
             },
             onQuit: {
-                // ⌘Q 已经在 SwiftUI app menu 注册, 这里菜单再 bind 一次
-                // 让用户能从状态栏菜单退出
+                // ⌘Q 已经在 SwiftUI app menu (CommandGroup(.appTermination)) 注册,
+                // 状态栏菜单再 bind 一次让用户能从状态栏直接退出, 不必先开主窗口
                 NSApp.terminate(nil)
             }
         )
         let menu = builder.build(
             recentWhos: Array(MissingStore.shared.knownWhos.prefix(5))
         )
-        statusMenu = menu
         // at: (0, 0) in panel.content → 菜单顶端对齐 panel 底端,
         // 系统自动处理"放不下就放上面"的越界翻转
         menu.popUp(

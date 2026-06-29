@@ -49,13 +49,6 @@
 
 ## 5. 不要做
 
-## 5.1 不要做（这一轮的）
-
-- 不要在 macOS 上尝试 `NSStatusItem.button` 重赋 / KVC 设值：read-only 走的是私有 selector，应用升级后会炸。右键菜单需求用其他路径（popover `…` 按钮、菜单栏二级菜单等）。
-- 不要在 popover action 同一 tick 同步调 `showPopover()`：NSPopover 在菜单栏点击时会"闪一下就关"。`DispatchQueue.main.async` 推到下一个 runloop tick。
-- 不要在 `MissingStore.add` 里直接调用 UI 更新（`NSLog` / `button.image =`）：store 可能在 main-actor 之外被调用，UI 更新要走 `NotificationCenter` 在 AppDelegate（@MainActor 范围内）接。
-
-
 - 不要绕过 `MissingStore` 直接改 `items`。
 - 不要在 SwiftUI 视图里发网络请求或启动后台任务 —— 当前是完全离线的单进程菜单栏 App。
 - 不要新增 XCTest / UI 测试 target，除非同步修改 `project.pbxproj`。
@@ -492,7 +485,7 @@ item.autosaveName = "MissingPlusPlusHeart"
 - 不要在 `SettingsView` 里直接调 `MissingStore.replaceAll(...)` 而不 alert 用户 — 删数据是 destructive action，必须走 confirmation dialog
 - 不要在 popover "…" 菜单里用 `NSApp.sendAction(Selector(("showSettingsWindow:")))` — 那个 selector 在 macOS 上不公开，靠碰运气；改用 `NotificationCenter` / `NSApp.delegate?.openSettings()` 这种公共路径
 
-## 22. Anxious Attachment Record Bundle（v1.x）
+## 22a. Anxious Attachment Record Bundle（v1.x）
 
 针对焦虑型依恋人格的"看见 pattern / 累积平复证据 / DBT 落点"扩展。Spec 在 `docs/superpowers/specs/2026-06-26-anxious-attachment-bundle-design.md`，plan 在 `docs/superpowers/plans/2026-06-26-anxious-attachment-bundle.md`。
 
@@ -584,7 +577,7 @@ item.autosaveName = "MissingPlusPlusHeart"
 - 不要在 5-4-3-2-1 step 中加 timer / 自动跳下一步（手点 = 用户 in control）
 - 不要给 CooldownSheet 加"完成打卡" / "我做了"按钮（这工具是"想到一个可做的事"，不是 task tracker）
 
-## 22. AI 增强 (OpenAI 兼容 endpoint)
+## 22b. AI 增强 (OpenAI 兼容 endpoint)
 
 **位置**：`MissingPlusPlus/Services/AIService.swift` + `Services/KeychainService.swift` + `Views/LetterToThemView.swift`。
 
@@ -619,7 +612,7 @@ item.autosaveName = "MissingPlusPlusHeart"
 - 不要在通知场景给 AI 超过 1.5s timeout（用户感知「立刻就有反馈」是通知的硬性 UX）。
 - 不要在 `NewMissingForm` 的 `latestSubmitted` 里塞 "current form values" 顶替真 missing（form reset 后会丢失 triggerTags 等字段，AI 拿到的 context 不准）。
 
-## 23. 主窗口激活兜底 (applicationDidBecomeActive)
+## 23a. 主窗口激活兜底 (applicationDidBecomeActive)
 
 **症状**（用户报告："程序有 bug 打不开主窗口"）：用户从 Finder 双击 / Spotlight 启动 / alt-tab 切回来之后看不到主窗口。状态栏 panel 在 macOS 26 又经常被 Control Center 区域盖住，⌥M 又是隐藏快捷键，结果就是没有可见的入口。
 

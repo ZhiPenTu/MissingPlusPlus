@@ -70,21 +70,25 @@ final class NotificationServiceTests: XCTestCase {
     /// postRecordNotification 投递的是 UNUserNotificationCenter (process singleton)
     /// 真实投递会出现在系统通知中心, 测试环境只是 smoke 验证不 crash。
     /// AI body 走 AIService.generateAINotificationBody, AI 关闭 → fallback 固定模板。
+    // MARK: - title 格式 (internal static helper)
+
+    func test_titleForMissing_withWho_usesWho() {
+        let m = Missing(who: "苏苏", mood: .longing, intensity: .strong)
+        XCTAssertEqual(NotificationService.titleForMissing(m), "想念 苏苏")
+    }
+
+    func test_titleForMissing_withEmptyWho_usesTA() {
+        let m = Missing(who: "", mood: .sad, intensity: .mild)
+        XCTAssertEqual(NotificationService.titleForMissing(m), "想念 TA")
+    }
+
+    // MARK: - postRecordNotification smoke
+
+    /// UNUserNotificationCenter 投递会真在通知中心出现 (测试环境也跑),
+    /// 干扰 dev 体验。Smoke 测只验不 crash + 给足时间让 AI fallback / 投递跑完。
     func test_postRecordNotification_doesNotCrash() {
         let service = NotificationService.shared
         let missing = Missing(who: "苏苏", mood: .longing, intensity: .strong)
-        service.postRecordNotification(for: missing)
-
-        // 给 UNUserNotificationCenter 投递一些时间
-        let exp = expectation(description: "wait for notification dispatch")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { exp.fulfill() }
-        wait(for: [exp], timeout: 2.0)
-    }
-
-    func test_postRecordNotification_withEmptyWho_usesTA() {
-        // 不会在通知中心出现 (AI fallback 后才提交), 但 smoke 验证不 crash
-        let service = NotificationService.shared
-        let missing = Missing(who: "", mood: .sad, intensity: .mild)
         service.postRecordNotification(for: missing)
 
         let exp = expectation(description: "wait for notification dispatch")

@@ -3,14 +3,19 @@ import AppKit
 
 /// 菜单栏 app 入口。
 ///
-/// AppDelegate 负责：
-/// - 自定义 NSPanel 浮动 status item（macOS 26 上 NSStatusItem 默认进
-///   Control Center 弹窗辅助区，屏幕顶部菜单栏看不到 — 改用 NSPanel 自己画）
-/// - NSMenu 1-click 记录（panel 点击 → 5 mood × who submenu → store.add）
-/// - Dock 点击（`applicationShouldHandleReopen` → showMainWindow）
-/// - ⌥M 全局热键（Carbon `EventHotKey`）
-/// - 通知（`UNUserNotificationCenter`）
-/// - 主窗口 / 设置窗口的生命周期
+/// AppDelegate 现在是纯 wiring 层 — 创建 4 个 controller, 转发 3 个 entry point
+/// (Dock click / ⌥M / 状态栏 panel click) + 1 个 dock reopen 回调, 订阅
+/// .missingStoreDidAdd 转给 NotificationService。具体的实现细节在
+/// `StatusBar/` + `Windows/` + `Services/` 目录的 controller / service 里。
+///
+/// 4 个 controller:
+/// - `WindowController` — 主窗口 + 设置窗口 NSWindow 生命周期
+/// - `StatusPanelController` — 状态栏 panel 装/卸 + click + 拖动
+/// - `HotKeyController` — Carbon ⌥M 全局热键
+/// - `ActiveStateController` — app 激活兜底拉主窗口
+///
+/// 1 个 service (singleton):
+/// - `NotificationService.shared` — 新记录 → 系统通知
 @main
 struct MissingPlusPlusApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -117,7 +122,4 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 系统通知走 NotificationService, AppDelegate 不再自己持 UN 代码
         NotificationService.shared.postRecordNotification(for: missing)
     }
-
-    // MARK: - 全局快捷键 (⌥M)
-
 }

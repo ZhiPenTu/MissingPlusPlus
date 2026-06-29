@@ -30,8 +30,7 @@ final class NotificationService {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
 
-        let who = missing.who.isEmpty ? "TA" : missing.who
-        let title = "想念 \(who)"
+        let title = Self.titleForMissing(missing)
         let attachment = Self.makeMoodAttachment(for: missing.mood)
         let identifier = "missing-\(missing.id.uuidString)"
 
@@ -53,6 +52,15 @@ final class NotificationService {
             )
             try? await center.add(request)
         }
+    }
+
+    /// 通知 title 格式: "想念 {who}"。empty who fallback 到 "TA"。
+    ///
+    /// `internal static` 是为了给 MissingPlusPlusTests 测 — 测试直接调
+    /// `NotificationService.titleForMissing(_:)` 验格式, 不依赖 UN 投递链路。
+    internal static func titleForMissing(_ missing: Missing) -> String {
+        let who = missing.who.isEmpty ? "TA" : missing.who
+        return "想念 \(who)"
     }
 
     /// 复制 mood 的菜单栏 PNG 到 tmp 目录,再 attach。

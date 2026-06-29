@@ -110,11 +110,11 @@ final class MenuBuilderTests: XCTestCase {
         XCTAssertTrue(desc.contains("intensity: MissingPlusPlus.Intensity"))
     }
 
-    // MARK: - onQuit selector 不传 closure 走 default
+    // MARK: - onQuit 配置
 
-    func test_quitAction_dispatchesToClosure() {
-        // MenuBuilder 把 quit item 的 action 设为 MenuActionRouter.quitFromMenu
-        // target 是 router。这里只验证 item 配置正确, 不实际 fire (避免真退出)
+    /// Quit item 的 action 指向 MenuActionRouter.quitFromMenu, target 是 router。
+    /// 不实际 fire (避免 NSApp.terminate 把测试进程杀掉) — 只验 item 配置正确。
+    func test_quitItem_hasActionAndTarget() {
         let builder = MenuBuilder(
             onRecord: { _, _, _ in },
             onOpenMain: {},
