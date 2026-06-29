@@ -151,11 +151,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - 启动
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // 保持 LSUIElement=true 启动的 .accessory (UIElement) 默认 policy。
-        // **不要**调 setActivationPolicy(.regular) — macOS 26 上会把
-        // NSStatusItem 路由进 com.apple.controlcenter.statusitems scene
-        // （Control Center 弹窗辅助区），屏幕顶部菜单栏看不到。
-        // 改走 NSPanel 自定义浮动 panel（见 StatusItemPanel 上方注释）。
+        // LSUIElement=false (Info.plist): app 启动是 .regular policy, 有
+        // Dock icon + 完整 menu bar + 标准 app menu。**不要**调
+        // setActivationPolicy(.regular) — macOS 26 上把 NSStatusItem
+        // 路由到 Control Center scene, 但我们用的是 NSPanel
+        // (`StatusItemPanel`), 不受这个 routing 影响, 所以可以放心
+        // 显示 dock icon 同时保留菜单栏 panel。
         installStatusPanel()
         installGlobalHotKey()
 
@@ -187,6 +188,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil
         )
+        // 监听 app 激活（Finder 打开 / Spotlight 启动 / alt-tab 切回来）
+        // → 兜底拉主窗口。`applicationShouldHandleReopen` 只在 hidden app
+        // 被 Dock 召唤那条路径触发, 没这条的话用户从 Finder / Spotlight 打开
+        // 只会看到状态栏 panel (macOS 26 经常被 Control Center 盖住), 找不到主窗口。
+        // 0.5s debounce 防抖: 快速 alt-tab 不会反复开/关主窗口。
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
+    // MARK: - 激活兜底 (主窗口)
+
+    private var lastBecomeActiveAt: Date = .distantPast
+    private static let becomeActiveDebounce: TimeInterval = 0.5
+
+    @objc private func handleAppDidBecomeActive() {
+        let now = Date()
+        guard now.timeIntervalSince(lastBecomeActiveAt) >= Self.becomeActiveDebounce else { return }
+        lastBecomeActiveAt = now
+        // 0.5s 之后才开主窗口, 让 macOS 自己的窗口切换动画跑完, 避免和系统动画打架。
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.showMainWindow()
+        }
     }
 
     // MARK: - 状态栏 panel
@@ -478,28 +505,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
 
-        let content = UNMutableNotificationContent()
         let who = missing.who.isEmpty ? "TA" : missing.who
-        content.title = "想念 \(who)"
-        let base = "心情：\(missing.mood.label)　程度：\(missing.intensity.label)"
-        let triggerPart: String
-        if AppPreferences.shared.notificationIncludeTriggers,
-           !missing.triggerTags.isEmpty {
-            let strs = missing.triggerTags.map(\.displayString)
-            triggerPart = "　触发：" + strs.joined(separator: " ")
-        } else {
-            triggerPart = ""
+        let title = "想念 \(who)"
+        let attachment = makeMoodAttachment(for: missing.mood)
+        let identifier = "missing-\(missing.id.uuidString)"
+
+        // body 走 AI。AI 关闭/超时/出错 → AIServiceContext.fixedNotificationBody
+        // 自动 fallback 到原来的固定模板,用户无感。
+        // 1.5s timeout (AIService 内部写死) → 通知最多延迟 1.5s,仍比用户感知快。
+        Task { @MainActor in
+            let body = await generateAINotificationBody(for: missing)
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            if let attachment {
+                content.attachments = [attachment]
+            }
+            let request = UNNotificationRequest(
+                identifier: identifier,
+                content: content,
+                trigger: nil
+            )
+            try? await center.add(request)
         }
-        content.body = base + triggerPart
-        if let attachment = makeMoodAttachment(for: missing.mood) {
-            content.attachments = [attachment]
-        }
-        let request = UNNotificationRequest(
-            identifier: "missing-\(missing.id.uuidString)",
-            content: content,
-            trigger: nil
-        )
-        center.add(request) { _ in }
     }
 
     private func makeMoodAttachment(for mood: Mood) -> UNNotificationAttachment? {

@@ -9,6 +9,9 @@ import UniformTypeIdentifiers
 /// Sections:
 ///   * 存储位置 — current path, iCloud badge, "更改…" / "恢复默认" buttons.
 ///   * 状态栏 — 是否在状态栏显示图标、图标样式（心形 / Emoji / 思字）。
+///   * 依恋辅助 — anxious-attachment bundle 开关。
+///   * Cooldown 活动 — 内置 + 自定义。
+///   * AI 增强 — OpenAI 兼容 endpoint, base-url + key + model + temperature。
 ///   * 数据 — import / export / clear-all (clear-all is gated by a
 ///     confirmation alert).
 ///
@@ -23,17 +26,40 @@ struct SettingsView: View {
     @State private var statusIsError: Bool = false
     @State private var showingClearConfirm: Bool = false
 
+    // AI 增强: API Key 存 Keychain,这里只做 UI 缓存。onAppear 时从 Keychain 读出来。
+    @State private var apiKey: String = ""
+    @State private var isTestingAI: Bool = false
+    @State private var aiTestResult: AITestResult? = nil
+
+    enum AITestResult: Equatable {
+        case success
+        case failure(String)
+    }
+
     var body: some View {
         Form {
             storageSection
             menuBarSection
             attachmentBundleSection
             cooldownSection
+            aiSection
             dataSection
             aboutSection
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 720)
+        // Settings scene 窗口: 宽 560 给 section 内容更多呼吸空间, 高 1000 装
+        // 6 个 section 不滚 (Cooldown 6 项 + 状态栏 / 依恋辅助 toggle 行) ,
+        // 剩余 1-2 个 section 在窗口内自然 scroll。
+        // **关键**: 写 height 之前先确认 Form 第一行 (section header) 的
+        // y 坐标 > Settings scene title bar 高度 (实测 ~57pt) —— 否则
+        // header 会跟 title bar 重叠 (旧版 720pt height 时的 bug)。
+        // 不要用 minHeight/idealHeight 间接传高度 —— Settings scene 会选
+        // 一个不够大的窗口把 Form 内容推到负 y (AX 实测 header 在 y=-521)。
+        // 紧凑: 540x700, 用户屏幕 982pt 高度能装下, 头 3 个 section
+        // (存储位置/状态栏/依恋辅助) 完整可见 + Cooldown 开头, 剩下的
+        // (Cooldown 后续/AI 增强/数据/关于) 在窗口内自然 scroll。
+        // 验证: form header 1 (存储位置) y=85 > title bar ~57pt, 顶部不重叠。
+        .frame(width: 540, height: 700)
         .alert("清空所有记录？", isPresented: $showingClearConfirm) {
             Button("取消", role: .cancel) {}
             Button("清空", role: .destructive) {
@@ -86,7 +112,120 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Cooldown 活动 (v1.x self-soothing)
+    // MARK: - AI 增强 (OpenAI 兼容 endpoint)
+
+    /// 用 SwiftUI Form 原生 row 模式 — `TextField("label", text: ...)` 会被 Form
+    /// 渲染成 "label 左, control 右" 的标准 settings row, 跟我们已有 状态栏 /
+    /// 依恋辅助 section 风格一致。不要再包 labeledField HStack — 那种自定义
+    /// layout 跟 Form 的列布局打架, 会出现 label 跟 input 叠加的怪样子 (上一轮截图)。
+    private var aiSection: some View {
+        Section {
+            Toggle("启用 AI 增强", isOn: $prefs.aiEnabled)
+
+            if prefs.aiEnabled {
+                TextField("Base URL", text: $prefs.aiBaseURL, prompt: Text("https://api.openai.com/v1"))
+                SecureField("API Key", text: $apiKey, prompt: Text("sk-..."))
+                    .onChange(of: apiKey) { _, newValue in
+                        prefs.aiAPIKey = newValue
+                    }
+                TextField("模型", text: $prefs.aiModel, prompt: Text("gpt-4o-mini"))
+
+                // 温度 = TextField + Stepper 同一行。Form 的 label 给 TextField,
+                // Stepper 跟在 TextField 右边。给一个 100pt 宽的 stepper 框,
+                // 防止它在 360pt 表单列里被挤变形。
+                HStack(spacing: 6) {
+                    TextField("温度",
+                              value: $prefs.aiTemperature,
+                              format: .number.precision(.fractionLength(0...2)),
+                              prompt: Text("0.85"))
+                    Stepper("",
+                            value: $prefs.aiTemperature,
+                            in: 0...2,
+                            step: 0.05)
+                        .labelsHidden()
+                        .frame(width: 80)
+                }
+
+                Button {
+                    runAITest()
+                } label: {
+                    HStack(spacing: 6) {
+                        if isTestingAI {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "antenna.radiowaves.left.and.right")
+                        }
+                        Text("测试连接")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(isTestingAI || !prefs.aiIsConfigured)
+
+                if let r = aiTestResult {
+                    aiTestResultView(r)
+                }
+
+                if !prefs.aiIsConfigured {
+                    Label("请填 Base URL 和 API Key 后再点测试连接。",
+                          systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+            }
+        } header: {
+            Text("AI 增强")
+        } footer: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("开启后 self-compassion 文案、通知正文和「致 TA 的话」会通过你配置的 endpoint 实时生成。")
+                Text("关闭时走内置文案库, 体验和之前一致。")
+                Text("🔒 API Key 存 macOS Keychain, 不在 UserDefaults 也不在数据文件里。")
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .onAppear {
+            if apiKey.isEmpty {
+                apiKey = prefs.aiAPIKey ?? ""
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func aiTestResultView(_ r: AITestResult) -> some View {
+        switch r {
+        case .success:
+            Label("连接成功", systemImage: "checkmark.circle.fill")
+                .font(.caption)
+                .foregroundColor(.green)
+        case .failure(let msg):
+            Label(msg, systemImage: "xmark.circle.fill")
+                .font(.caption)
+                .foregroundColor(.red)
+                .lineLimit(2)
+        }
+    }
+
+    private func runAITest() {
+        isTestingAI = true
+        aiTestResult = nil
+        Task {
+            let result = await testAIConnection()
+            await MainActor.run {
+                isTestingAI = false
+                switch result {
+                case .success(let text):
+                    aiTestResult = .success
+                    NSLog("[Settings] AI test success: \(text)")
+                case .failure(let err):
+                    aiTestResult = .failure(err.localizedDescription)
+                    NSLog("[Settings] AI test failed: \(err.localizedDescription)")
+                }
+            }
+        }
+    }
+
+        // MARK: - Cooldown 活动 (v1.x self-soothing)
 
     @State private var newCooldownText: String = ""
 

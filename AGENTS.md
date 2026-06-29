@@ -56,7 +56,6 @@
 - 不要在 `MissingStore.add` 里直接调用 UI 更新（`NSLog` / `button.image =`）：store 可能在 main-actor 之外被调用，UI 更新要走 `NotificationCenter` 在 AppDelegate（@MainActor 范围内）接。
 
 
-- 不要把 `LSUIElement` 改成 `false`（会冒出 Dock 图标，破坏产品形态）。
 - 不要绕过 `MissingStore` 直接改 `items`。
 - 不要在 SwiftUI 视图里发网络请求或启动后台任务 —— 当前是完全离线的单进程菜单栏 App。
 - 不要新增 XCTest / UI 测试 target，除非同步修改 `project.pbxproj`。
@@ -584,3 +583,205 @@ item.autosaveName = "MissingPlusPlusHeart"
 - 不要把预定义 6 条 cooldown 暴露给用户删（v1 锁死，6 条是开箱即用 fallback）
 - 不要在 5-4-3-2-1 step 中加 timer / 自动跳下一步（手点 = 用户 in control）
 - 不要给 CooldownSheet 加"完成打卡" / "我做了"按钮（这工具是"想到一个可做的事"，不是 task tracker）
+
+## 22. AI 增强 (OpenAI 兼容 endpoint)
+
+**位置**：`MissingPlusPlus/Services/AIService.swift` + `Services/KeychainService.swift` + `Views/LetterToThemView.swift`。
+
+**架构**：
+- `actor AIService` 只负责 `chat(spec:system:userMessage:temperature:maxTokens:timeout:)` 这一层 low-level 网络。
+- 高层方法（`generateSelfCompassion` / `generateAINotificationBody` / `generateLetterToThem` / `testAIConnection`）是 `@MainActor` 的 free function，**在 @MainActor 上读 `AppPreferences`，把值快照成 `AIService.RequestSpec` 后再交给 actor**。actor 内部不读 AppPreferences（避免 actor 隔离 + MainActor 隔离交叉）。
+- `KeychainService` 存 API Key（account = "openai"），不进 UserDefaults 也不进 missings.json。`AppPreferences.aiAPIKey` 是 computed property，包了 get/set。
+- `MissingPlusPlus.entitlements` 加了 `com.apple.security.network.client`（Sandbox 默认禁网，AI 走用户自己的 base-url 必须显式开）。
+
+**协议**：OpenAI chat completions（`POST {baseURL}/v1/chat/completions`，Bearer auth）。`AIService.normalizeEndpoint` 兼容用户填的 4 种 base-url 形态（带不带 `/v1`、带不带尾斜杠），内部归一化。
+
+**降级策略**（用户无感）：
+- `aiEnabled == false` → 走 hardcoded 文案（17 句 self-compassion / 通知固定模板 / 3 封备选信）。
+- `aiEnabled == true` 但 key / base-url 缺失 / 网络失败 / 解析失败 / timeout → 同样降级到 hardcoded，**`NSLog` 记一行便于 debug，不弹窗**。
+- timeout 严格：通知 1.5s，self-compassion 用 `aiRequestTimeout`（默认 2.0s），letter 用 `max(aiRequestTimeout, 3.0)`。Task group `try await { chat, sleep }` 的第一个 winner 决定胜负。
+
+**Settings UI**（`SettingsView.aiSection`）：enable toggle + Base URL + API Key（SecureField） + 模型 + 温度 Stepper + 测试连接按钮。Frame 调到 `minHeight: 820` 给新 section 留位。
+
+**集成点**：
+- `SelfCompassionView`：接受 `Missing`，onAppear 调 `generateSelfCompassion`；右上角小角标区分「AI」/「内置」文案。「再换一句」按钮重新调用。
+- `MissingPlusPlusApp.postRecordNotification`：body 走 `generateAINotificationBody`，1.5s timeout；title 同步拼，附件同步建。整段被 `Task { @MainActor in ... }` 包起来。
+- `NewMissingForm` inline "想冷静一下" 行：加第 4 个图标按钮 `paperplane`（indigo）→ 触发 `pendingLetter = latestSubmitted`，打开 `LetterToThemView`。`latestSubmitted: Missing?` 是新加的 state，submit 时设置。
+- `LetterToThemView`：`Missing` 进来 → 自动 `generateLetterToThem` → 「再写一封」重生成 → 「复制」走 `NSPasteboard.general` + 1.5s 「已复制」确认。
+
+**pbxproj**：3 个新 Swift 源（`KeychainService` / `AIService` / `LetterToThemView`）走 §22 流程在 PBXBuildFile / PBXFileReference / PBXGroup (Services + Views) / PBXSourcesBuildPhase 各插一行。IDs 续 `A1000012...A00A` / `B1000012...A00A`。
+
+**「不要做」**（这一轮新加）：
+- 不要把 API key 存 UserDefaults 或 missings.json（必须走 Keychain）。
+- 不要让 `actor AIService` 直接读 `AppPreferences` 字段（actor 隔离 ≠ MainActor 隔离，编译就过不了）。高层方法必须是 `@MainActor` 自由函数，**先快照 prefs 再调 actor**。
+- 不要改 `AIService.normalizeEndpoint` 兼容的 base-url 形态范围（用户可能填 DeepSeek / 硅基流动 / 本地 ollama，每家的 `/v1` 习惯不一样，normalize 统一收口）。
+- 不要在 `SelfCompassionView` / `LetterToThemView` 里直接用 `AIService.shared` 调网络（这两个 view 不是 MainActor，actor 调用要经过 `@MainActor` free function 中转）。
+- 不要在通知场景给 AI 超过 1.5s timeout（用户感知「立刻就有反馈」是通知的硬性 UX）。
+- 不要在 `NewMissingForm` 的 `latestSubmitted` 里塞 "current form values" 顶替真 missing（form reset 后会丢失 triggerTags 等字段，AI 拿到的 context 不准）。
+
+## 23. 主窗口激活兜底 (applicationDidBecomeActive)
+
+**症状**（用户报告："程序有 bug 打不开主窗口"）：用户从 Finder 双击 / Spotlight 启动 / alt-tab 切回来之后看不到主窗口。状态栏 panel 在 macOS 26 又经常被 Control Center 区域盖住，⌥M 又是隐藏快捷键，结果就是没有可见的入口。
+
+**根因**：旧 `applicationShouldHandleReopen` 只在"Dock 召唤 hidden app"那条路径触发，从 Finder / Spotlight 直接打开 / 切回来的路径它不管。`Info.plist` 里 `LSUIElement=true` 又没有 Dock icon，状态栏 panel 经常看不到 —— 用户就被卡住了。
+
+**修复**（`MissingPlusPlusApp.swift`）：在 `applicationDidFinishLaunching` 末尾挂 `NSApplication.didBecomeActiveNotification` 监听：
+
+```swift
+@objc private func handleAppDidBecomeActive() {
+    let now = Date()
+    guard now.timeIntervalSince(lastBecomeActiveAt) >= Self.becomeActiveDebounce else { return }
+    lastBecomeActiveAt = now
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+        self?.showMainWindow()
+    }
+}
+```
+
+- 0.5s debounce 防 alt-tab 反复触发。
+- 0.3s 延迟让 macOS 自带的窗口切换动画跑完，避免和系统动画打架。
+- `showMainWindow` 内部已经处理"已存在就 makeKey，没有就创建"。
+
+**验证**：launch → windows=1 (panel only)。激活（alt-tab / Finder / Spotlight）→ windows=2 (panel + 思念计数器)。⌘, → 仍打开 SwiftUI `Settings { EmptyView() }` 那个老坑（不在本轮范围内）。
+
+**「不要做」（这一轮新加）**：
+- 不要用 `NSApp.activate(ignoringOtherApps: true)` 替代 `didBecomeActive` 监听 —— 前者只把 app 拉到前面，不会触发主窗口创建逻辑；后者才是 macOS 标准的"app 被激活"信号。
+- 不要在 `handleAppDidBecomeActive` 里直接 `showMainWindow()`（同步）—— 0.3s 延迟是和 macOS 窗口切换动画的契约，跳过它会闪一下。
+- 不要把 debounce 阈值调成 < 0.3s —— alt-tab 快速切换会反复调用 showMainWindow，触发 NSWindow 创建/显示逻辑浪费资源。
+- 不要在 `applicationDidFinishLaunching` 里直接 `showMainWindow()` —— 启动那一下 macOS 自己会 activate app，`didBecomeActive` 会接住，不需要在 finishLaunching 里双开。
+
+## 24. Settings AI section 布局修复 (SwiftUI Form 原生 row 模式)
+
+**症状**（用户报告："设置的页面 需要修理一下布局和样式"）：我加的 `aiSection` 用了自己写的 `labeledField` HStack helper，70pt 宽 label + content。结果跟 SwiftUI `Form` 的列布局打架，每个 row 出现 "label 跟 input 叠加" 的怪样子（截图中 TextField 同时显示 placeholder 和实际值，Stepper 把 label 挤掉）。
+
+**根因**：`Form { Section { ... } }` 在 macOS 上自动把每个 row 渲染成 "label 列 + control 列" 两列布局。原生控件（`Toggle / Picker / TextField` with `init("label", text: ...)`）能被 Form 正确拆分到两列；但把 HStack（含 label + control）塞进 Section 时，Form 把整个 HStack 当成 control 放到右列，左列就空着 / 显示自己的 label，导致视觉上 label 跟 control 都在右列堆叠。
+
+**修法**（`SettingsView.aiSection`）：
+- 删掉 `labeledField<Content: View>(label:content:)` helper。
+- 每个 row 直接用 `TextField("Base URL", text: $prefs.aiBaseURL, prompt: Text("..."))` — Form 拿 init 里的字符串当 label，prompt 当 placeholder。
+- `SecureField("API Key", text: $apiKey, prompt: Text("sk-..."))` 同理。
+- 温度 = `HStack { TextField("温度", value: $prefs.aiTemperature, ...); Stepper("").labelsHidden().frame(width: 80) }` — TextField 提供 label 给 Form，Stepper 跟 TextField 同行右侧。Stepper 给 80pt 固定宽防止被 360pt 表单列挤变形。
+- 测试连接 = 单独 `Button("测试连接") { ... }` 一行，不再用 `Image + Text` 拼接（HStack 在 Form row 里 label 同样会丢）。
+- 测试结果 / 警告 = 用 `Label("...", systemImage: "...")` 单独行。
+- Footer 缩短：3 段精简成 3 行（开启后效果 / 关闭时行为 / Keychain 安全），用 `.font(.caption).foregroundColor(.secondary)`，不再 `fixedSize(horizontal: false, vertical: true)`。
+
+**验证**（AX tree dump，item 14 = AI section group）：
+```
+启用 AI 增强 → CheckBox
+Base URL     → TextField "https://api.openai.com/v1"
+API Key      → SecureField ""
+模型         → TextField "gpt-4o-mini"
+温度         → TextField "0.85" + Stepper "0.85"
+测试连接     → Button
+warning      → "请填 Base URL 和 API Key 后再点测试连接。"
+```
+每个 label 跟 control 在不同 AX 节点上, 跟 `状态栏` / `依恋辅助` section 风格一致。
+
+**「不要做」（这一轮新加）**：
+- 不要在 SwiftUI `Form { Section { ... } }` 里塞自定义 HStack / VStack 试图做"label + control"两列布局 —— 走原生 `TextField("label", text: ...)` / `SecureField("label", text: ...)` / `Picker("label", selection: ...)`，Form 自己会拆列。
+- 不要在 Form row 里用 `Image + Text` 拼接的 button label —— 用纯 `Button("测试连接")` 一行，Form 会给单独的 row。
+- 不要给 Form section footer 写超过 3 段的长篇说明 —— footer 在 480pt settings 窗口里只有 ~400pt 宽，长篇 footer 会被 Form 强制截断并撑爆 form 总高，反而挡下面的 section。
+- 不要给 `Form { ... }` 加 `.frame(width: 480, height: 720)` 这种固定尺寸 —— SwiftUI `Settings` scene 自己会管理窗口尺寸，硬塞 frame 会让 form 内部算高度时算错、出现 footer 被截断的问题。需要 minHeight 时用 `.frame(minHeight: ...)`。
+
+## 25. Settings 窗口尺寸 / title bar 重叠修复
+
+**症状**（用户报告："窗口红色框框部分 重叠了。 底部也是一样"）：Settings scene 窗口顶部 title bar (含 close 按钮 + "MissingPlusPlus 设置" 标题) 跟第一个 section header "存储位置" 挤在同一行；底部 form 内容也被窗口底边切掉，看不到完整。
+
+**根因**：旧版 `.frame(width: 480, height: 720)` 写死高度 720pt，但加 AI section 之后 form 实际总高 ~1645pt。Settings scene 把 form 塞进 720pt 框 → form 在框内 scroll → 但 Settings scene 的 title bar 是 NSPanel 自带, 不算在 form 的 frame 里, title bar 跟 form 顶部对不齐 (title bar y=0..~24pt, form 顶部 y=0, 两者重叠)。底部同样, form 内容在 720pt 窗口内被截。
+
+**试过的修复 (都不行, 留作反例)**：
+- 加 `.frame(minHeight: 820)` → 第二个 `.frame()` 覆盖第一个, 旧 height: 720 还在, minHeight 失效。
+- 改成 `.frame(minWidth: 480, idealWidth: 480, minHeight: 820)` → Settings scene 选了个 480x852 窗口, AX 实测 form 第一个 header 跑到 y=-521 (屏幕外), 整个 form 顶部被推到负坐标, 看起来"窗口变小了但内容全在屏幕外"。
+- 改成 `.frame(width: 480)` (只锁 width) → Settings scene 选 480x450, 太矮, 几乎所有 section 都要滚。
+
+**最终修法** (`.frame(width: 540, height: 700)`)：
+- width: 540 给 section 横向更宽, label / control 间距舒服 (旧 480 显挤), 又比 560 紧凑。
+- height: 700 让窗口能装进大部分 13" Mac 屏幕 (visible 982pt), 头 3 个 section 完整可见 + Cooldown 开头, 剩下的在窗口内自然 scroll。中间试过 1000 (用户反馈太高) 和 1200 (超过屏幕), 最终 700 是「装得下 + 看起来紧凑」的折中。
+- **关键检查**: build 完用 macOS Accessibility 工具查 form 第一个 section header 的 y 坐标, 必须 > Settings scene title bar 高度 (实测 ~57pt) —— 否则 header 会跟 title bar 重叠。
+- 高度不要写太大 (>= 1500): 屏幕装不下, 反而更难看。
+- 不要用 minHeight/idealHeight 间接传高度: Settings scene 选的高度可能让 form 顶部跑到负 y 区域。
+
+**验证 (AX tree dump)**：
+```
+win: y=33, h=1032, bottom=1065
+form header 1 (存储位置): y=85, h=16  → OK (在 title bar 57pt 之下)
+form header 14 (AI 增强):  y=1004    → OK (在窗口内)
+form header 19 (数据):     y=1407    → BELOW_WIN (在窗口底部之下, 可滚)
+form header 22 (关于):     y=1579    → BELOW_WIN (在窗口底部之下, 可滚)
+```
+
+**「不要做」(这一轮新加)**：
+- 不要在 `Settings { ... }` scene 里用 `.frame(height: xxx)` 写死高度 — 写死高度会让 form 在窗口内 scroll, scroll 后顶部跟 title bar 重叠。要么不写 height (让 Settings scene 撑高), 要么写 height 但 height 必须 ≥ form 实际总高 (避免窗口内 scroll)。
+- 不要在 `Form` 上同时用多个 `.frame()` modifier — SwiftUI 里后者覆盖前者, 旧值会失效 (上一轮 minHeight 失效的根因)。
+- 不要假设 `Settings` scene 会按 form 实际高度自动撑窗口 — macOS auto-sizing 经常选个跟内容不匹配的高度, 写死 height 反而更可控。
+- 不要在 `Form` 里塞 `Section` 数量超过 8 个 + 每个 section 都带 footer — 7 个 section + 7 个 footer 就要 1000+pt, 屏幕装不下。要么压缩 footer 文本, 要么接受窗口内 scroll。
+
+## 26. AI 返回 <think> 推理块 bug 修复
+
+**症状**（用户报告："存在 bug,对接 ai 之后显示"）：用户开了 AI 增强, 用 DeepSeek R1 / QwQ / o1 这类 reasoning model, SelfCompassionView 弹出来显示整张 sheet 写的是 `<think>`（不是真正的话, 是模型 chain-of-thought 块的开头 tag）。
+
+**根因**：
+- 这类 reasoning model 把思考过程作为可见输出的一部分返回, 格式是 `<think>...reasoning...</think>actual response`。
+- 我之前的 `firstCleanLine` 只剥引号 + 取首行, 不知道有 `<think>` 块这回事。系统 prompt 写"直接给那 1 句话"也拦不住 — 思考是模型架构层面的行为, 不受 prompt 控制。
+- 极端情况 (truncated / 输出截断) 会只返回 `<think>` 一个开头 tag, 用户看到的就是空 sheet 上面写个 `<think>`, 跟产品完全脱节。
+
+**修法**（`AIService.swift` `AIServiceContext`）：
+- 新增 `cleanAIPhrase(_ text: String) -> String?`, 用 `NSRegularExpression` 剥 3 种推理块:
+  ```
+  <\s*think\s*>[\s\S]*?(?:<\s*/\s*think\s*>|$)
+  <\s*reasoning\s*>[\s\S]*?(?:<\s*/\s*reasoning\s*>|$)
+  <\s*reflection\s*>[\s\S]*?(?:<\s*/\s*reflection\s*>|$)
+  ```
+  模式末尾用 `(?:close|$)` 而不是只 `close`, 兼容 truncated think (没闭合的也整个剥掉, 避免吞掉后面真正的回复)。`caseInsensitive` 兼容 `<THINK>` 等。
+- 剥完后再剥 smart quotes / ASCII 引号 / 全角单引号, trim 空白, 按 newline 取第一个非空 line。
+- **关键**: split 只按 `\n`, 不要按 whitespace — 之前误写成 `split(whereSeparator: { $0.isNewline || $0.isWhitespace })`, 会把 "real response" 切成 "real" + "response" 只取第一个, 丢一半内容。
+- 返回 `String?` 而不是 `String`: `nil` 表示清洗后为空 (整段都是 think 块 / 空白), 调用方走 hardcoded fallback。`firstCleanLine` 改成 delegate 保留老接口, 永远不返回空。
+- 调用方改用 `cleanAIPhrase` + `?? fallback`:
+  ```swift
+  return AIServiceContext.cleanAIPhrase(text)
+      ?? SelfCompassionPhrases.phrases.randomElement()!  // guard 已保证非空
+  return AIServiceContext.cleanAIPhrase(text) ?? fallback  // 通知 / 致 TA 的话
+  ```
+
+**验证** (12 个 case, swift 单元测全部 pass):
+```
+✓ "<think>"                          → nil       (fallback)
+✓ "<think>reasoning</think>real"     → "real response"  (multi-word 保留)
+✓ "<think>\n跨行\n</think>\nactual"   → "actual phrase"  (跨行剥)
+✓ "<REASONING>x</REASONING>hi"       → "hi"      (case-insensitive)
+✓ "hello world"                      → "hello world"   (空格保留)
+✓ "\"当然...\""                     → "当然..."        (引号剥)
+✓ "   "                              → nil       (空白)
+✓ "<think>no close tag"              → nil       (truncated)
+✓ "prefix<think>mid</think>suffix"   → "prefixsuffix"  (前后保留)
+✓ "first line\nsecond line"          → "first line"    (取首行)
+✓ "<think>长思考\n跨多行</think>回应"  → "回应"          (中文 + 跨行)
+```
+
+**「不要做」(这一轮新加)**：
+- 不要在 system prompt 里写"不要输出 <think>"来拦 reasoning model — 思考是架构层行为, prompt 拦不住, 必须在客户端剥。
+- 不要用 `split(whereSeparator: { $0.isNewline || $0.isWhitespace })` 切 AI 返回的首行 — 空格会把多词回复 (如 "real response") 切成两半, 永远只取第一个词。`firstCleanLine` 旧版只按 newline 切, 是对的; cleanAIPhrase 也只按 newline 切。
+- 不要让 cleanAIPhrase 在 nil 时返回空 String — 调用方要 `?? fallback`, 所以必须 `String?`。否则 thinking-only 响应会变成空 sheet, 比显示 `<think>` 还糟。
+- 不要 hard-code 只剥 `<think>` 一种 tag — 至少覆盖 `<think>` / `<reasoning>` / `<reflection>` 三种, 不同 model / 不同版本会换名字, 跟 prompt 一样不可靠。
+
+## 27. LSUIElement=false — Dock icon 显示
+
+**需求**（用户报告："打开主窗口时，希望在 dock 栏也能显示出来"）：之前 `Info.plist` 里 `LSUIElement=true` 让 app 以 .accessory policy 启动, 没有 Dock icon, app menu 也是隐藏的。用户希望在 dock 看到 app icon (用于 ⌘Q 退出 / Dock 右键菜单 / Spotlight 显示完整 app 名等)。
+
+**修法** (`Info.plist` + `MissingPlusPlusApp.swift`):
+1. `Info.plist` 的 `LSUIElement` 改 `false` → app 启动是 .regular policy, 天然有 Dock icon + 完整 app menu + Spotlight 标准 app 名, **不需要显式 `setActivationPolicy(.regular)`**。
+2. `MissingPlusPlusApp.applicationDidFinishLaunching` 里更新注释: 旧 "**不要**调 setActivationPolicy(.regular) — macOS 26 上把 NSStatusItem 路由到 com.apple.controlcenter.statusitems scene" 这条警告**不适用**当前架构。我们用的是 NSPanel (`StatusItemPanel`) 不是 NSStatusItem, NSPanel 是浮动 panel, 不受 LSUIElement / activation policy routing 影响, 菜单栏 panel 仍正常显示。
+
+**验证 (lsappinfo info + osascript dock 列表)**:
+```
+flavor=3  (regular policy)
+lsappinfo list: "MissingPlusPlus" ASN:0x0-0x3123120  bundleID=com.tuzhipeng.MissingPlusPlus
+osascript dock 列表: 访达, App, ..., Codex, MissingPlusPlus, missing value, 下载, 废纸篓
+status panel: (1018, 6) 22x22  ← 菜单栏还在
+主窗口: 思念计数器 360x752
+```
+
+**「不要做」(这一轮新加 / 更新)**:
+- (新) 不要在 LSUIElement=false 后**再**显式调 `setActivationPolicy(.regular)` — 改 Info.plist 已经让 app 启动是 .regular, 显式再调一次会触发 macOS 26 那个 "NSStatusItem 被路由到 Control Center scene" 的 bug (虽然我们用 NSPanel 不受影响, 但保持代码干净)。
+- (新) 不要为了让 dock icon 在 macOS 26 上"看起来更紧凑" 写自定义 NSDockTile hook — `LSUIElement=false` 已经够用, NSDockTile 是 menu bar app 跟 sandbox 互动时容易踩坑。
+- (更新) ~~不要把 `LSUIElement` 改成 `false`~~ → 改成 `false` 现在是允许的 (用户明确要求 dock icon), 见 §27 详细说明。
