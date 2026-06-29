@@ -14,16 +14,16 @@ concurrency:
 jobs:
   build-and-test:
     name: Build (Debug) + Run Tests
-    runs-on: macos-14  # macOS 14 + Xcode 15.4, 跟工程 13.5 deployment target 兼容
+    runs-on: macos-15  # macOS 15 + Xcode 16, 工程 deployment target 26.0 需要
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
-        # macos-14 runner 自带 Xcode 15.4, 工程 deployment target 13.5 完全兼容
-        # 用具体版本避免 macos-latest 默认 Xcode 变化导致 build 飘
+        run: sudo xcode-select -s /Applications/Xcode_16.0.app
+        # macos-15 runner 默认 Xcode 16.0+, 跟工程 deployment target 26.0 兼容
+        # (Xcode 15.4 最高 SDK 14.5, 不支持 macOS 26 target)
 
       - name: Cache DerivedData
         uses: actions/cache@v4
@@ -38,15 +38,17 @@ jobs:
       - name: Build (Debug)
         run: |
           set -euo pipefail
-          ./scripts/build_and_run.sh --help >/dev/null  # 验脚本存在 + 可执行
-          # build_and_run.sh default 会 launch .app, CI 不要 launch
-          # 改用 xcodebuild build-for-testing 直接 build + 跑 tests
+          # CI runner 缺 Mac Development cert, 用 ad-hoc 签名绕开
+          # (本地 build 仍然用真 cert + DEVELOPMENT_TEAM=J79GWDGRCY)
           xcodebuild \
             -project MissingPlusPlus.xcodeproj \
             -scheme MissingPlusPlus \
             -configuration Debug \
             -derivedDataPath build/DerivedData \
             -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
             build-for-testing
 
       - name: Run Tests
