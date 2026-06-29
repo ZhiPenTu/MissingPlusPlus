@@ -43,8 +43,8 @@ struct MissingPlusPlusApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var mainWindow: NSWindow?
-    private var settingsWindow: NSWindow?
+    // 主窗口 / 设置窗口的生命周期在 WindowController 里,AppDelegate 只管转发入口。
+    private let windowController = WindowController()
     private var statusPanel: StatusItemPanel?
     private var statusMenu: NSMenu?
     private var hotKeyRef: EventHotKeyRef?
@@ -67,13 +67,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self,
             selector: #selector(handleMissingAdded(_:)),
             name: .missingStoreDidAdd,
-            object: nil
-        )
-        // 监听设置入口（保留 notification 路径供未来菜单调用）
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleOpenSettings(_:)),
-            name: .openSettings,
             object: nil
         )
         // 监听 prefs 变化（showStatusItem / menuBarIconStyle）→ 重画 / 重建 status panel
@@ -316,65 +309,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Dock 点击
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        showMainWindow()
+        windowController.showMainWindow()
         return true
     }
 
     // MARK: - 主窗口 / 设置窗口
 
+    // Dock / ⌥M / 状态栏 NSMenu "在主窗口记录" 都走这,真正 lazy 创建 +
+    // frame autosave 在 WindowController 里,AppDelegate 不持有 window state。
     func showMainWindow() {
-        if let window = mainWindow, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-        } else {
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 360, height: 720),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                backing: .buffered,
-                defer: false
-            )
-            window.title = "思念计数器"
-            window.contentViewController = NSHostingController(
-                rootView: MenuBarContent(store: MissingStore.shared)
-                    .frame(width: 360, height: 720)
-            )
-            window.center()
-            window.setFrameAutosaveName("MainWindow")
-            window.isReleasedWhenClosed = false
-            window.makeKeyAndOrderFront(nil)
-            mainWindow = window
-        }
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    private func showSettingsWindow() {
-        if let window = settingsWindow, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-        } else {
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 480, height: 600),
-                styleMask: [.titled, .closable, .miniaturizable],
-                backing: .buffered,
-                defer: false
-            )
-            window.title = "Missing++ 设置"
-            window.contentViewController = NSHostingController(
-                rootView: SettingsView(
-                    store: MissingStore.shared,
-                    storage: StorageService.shared
-                )
-                .frame(width: 480, height: 600)
-            )
-            window.center()
-            window.setFrameAutosaveName("SettingsWindow")
-            window.isReleasedWhenClosed = false
-            window.makeKeyAndOrderFront(nil)
-            settingsWindow = window
-        }
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    @objc private func handleOpenSettings(_ note: Notification) {
-        showSettingsWindow()
+        windowController.showMainWindow()
     }
 
     // MARK: - 状态变化

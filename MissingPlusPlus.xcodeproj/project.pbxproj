@@ -39,6 +39,7 @@
 		A1000012000000000000A006 /* SelfCompassionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A006 /* SelfCompassionView.swift */; };
 		A1000012000000000000A007 /* CooldownSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A007 /* CooldownSheet.swift */; };
 		A1000012000000000000A00B /* StatusItemPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00B /* StatusItemPanel.swift */; };
+		A1000012000000000000A00C /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00C /* WindowController.swift */; };
 		A1000012000000000000A008 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A008 /* KeychainService.swift */; };
 		A1000012000000000000A009 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A009 /* AIService.swift */; };
 		A1000012000000000000A00A /* LetterToThemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00A /* LetterToThemView.swift */; };
@@ -80,6 +81,7 @@
 		B1000012000000000000A006 /* SelfCompassionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfCompassionView.swift; sourceTree = "<group>"; };
 		B1000012000000000000A007 /* CooldownSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CooldownSheet.swift; sourceTree = "<group>"; };
 		B1000012000000000000A00B /* StatusItemPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemPanel.swift; sourceTree = "<group>"; };
+		B1000012000000000000A00C /* WindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowController.swift; sourceTree = "<group>"; };
 		B1000012000000000000A008 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		B1000012000000000000A009 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
 		B1000012000000000000A00A /* LetterToThemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterToThemView.swift; sourceTree = "<group>"; };
@@ -108,6 +110,7 @@
 			isa = PBXGroup;
 			children = (
 				D0000008000000000000A001 /* StatusBar */,
+			D0000009000000000000A001 /* Windows */,
 				D0000007000000000000A001 /* Resources */,
 				B1000001000000000000A001 /* MissingPlusPlusApp.swift */,
 				D0000004000000000000A001 /* Models */,
@@ -175,6 +178,14 @@
 				B1000012000000000000A00B /* StatusItemPanel.swift */,
 			);
 			path = StatusBar;
+			sourceTree = "<group>";
+		};
+		D0000009000000000000A001 /* Windows */ = {
+			isa = PBXGroup;
+			children = (
+				B1000012000000000000A00C /* WindowController.swift */,
+			);
+			path = Windows;
 			sourceTree = "<group>";
 		};
 		D0000007000000000000A001 /* Resources */ = {
@@ -308,6 +319,7 @@
 			A1000012000000000000A009 /* AIService.swift in Sources */,
 			A1000012000000000000A00A /* LetterToThemView.swift in Sources */,
 				A1000012000000000000A00B /* StatusItemPanel.swift in Sources */,
+				A1000012000000000000A00C /* WindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

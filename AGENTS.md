@@ -815,3 +815,37 @@ Release 删掉, 同时把 source 的 get-task-allow 也删。
 - 不要在 pbxproj 里**只**加 `CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION` 不加 source `get-task-allow` — Xcode 26 还是会试图 inject, 然后 mtime 跟 source 冲突, 报错依旧。两条都得加。
 - 不要在每次 build 之前手动 `defaults write com.apple.dt.Xcode ...` 设 environment — GUI build 不读 env, 必须改 pbxproj 才能彻底解决。
 - 不要 `chmod -R` 改 entitlements 文件权限试图"解锁" Xcode — Xcode 不看 POSIX 权限, 看的是它在 build system 里的 internal state。
+
+## 30. AppDelegate 重构: 抽出 WindowController (Phase 2)
+
+**目标**: 把 AppDelegate 里 `mainWindow` / `settingsWindow` 的 NSWindow 生命周期管理抽到独立 controller, AppDelegate 只留"转发入口"的薄层。
+
+**新增**: `MissingPlusPlus/Windows/WindowController.swift` (110 行)
+- 沿用 Phase 1 `StatusBar/` 的目录约定 — 每个 AppKit 桥接件一个目录
+- `WindowController` 是 `@MainActor final class`, 持有 `mainWindow` + `settingsWindow` 两个 NSWindow
+- 工厂方法 `makeWindow<Content: View>(...)` 统一 frame autosave / `isReleasedWhenClosed=false` / 居中逻辑
+- `init()` 里 subscribe `.openSettings` notification (Settings scene body 是 EmptyView, ⌘, 走我们自己的窗口)
+- `showMainWindow()` — Dock / ⌥M / 状态栏 NSMenu "在主窗口记录" 都走这
+
+**AppDelegate 改动** (483 → 427 行, -56):
+- 删掉 `private var mainWindow: NSWindow?` / `settingsWindow: NSWindow?` 属性
+- 删掉 60 行的 `showSettingsWindow()` + 3 行的 `handleOpenSettings(_:)` 方法体
+- 删掉 `.openSettings` notification observer (搬到 WindowController.init)
+- 删掉 28 行的 `showMainWindow()` 方法体 — 现在就是一行 `windowController.showMainWindow()`
+- `applicationShouldHandleReopen` 改成 `windowController.showMainWindow()`
+- 新增 `private let windowController = WindowController()`
+
+**`project.pbxproj` 改动** (4 处插入, 沿用 Phase 1 ID 规则 `A/B/D1000012...0C` / `D0000009...A001`):
+1. PBXBuildFile 段: 新 build file 引用
+2. PBXFileReference 段: 新 file ref
+3. PBXGroup 段: 新 `Windows` group definition + 加进 `MissingPlusPlus` group children
+4. PBXSourcesBuildPhase 段: 新 `WindowController.swift in Sources`
+
+**验证**: `xcodebuild -configuration Debug build` → `** BUILD SUCCEEDED **`, 零警告零错误。
+
+**保留**: Phase 1 的 `StatusItemPanel` + `StatusItemView` 完全不动; 三入口 (Dock / ⌥M / 状态栏 NSMenu) 仍然全部能开主窗口, 行为无变化。
+
+**「不要做」(新增 §5.1)**:
+- 不要让 AppDelegate 直接 `let wc = WindowController()` 之后再 `wc = nil` / `wc = WindowController()` 重建 — 工厂方法 + `isReleasedWhenClosed=false` 已经能复用 window 实例, 多份 WindowController 会让 frame autosave 跟 window state 走两份, 容易错位。
+- 不要把 settings 窗口的 `⌘,` 入口搬回 SwiftUI `Settings { SettingsView(...) }` 那一套 — 我们的 SettingsView 在 NSWindow 里手画 (autosave 名 "SettingsWindow"), 跟主窗口同一套视觉风格; 走 `EmptyView` + 监听 `.openSettings` notification 是有意为之, 不要回退。
+- 不要在 `WindowController` 里持 `MissingStore.shared` / `AppPreferences.shared` — 它只是个窗口管理者, 数据流从外面传进来 (rootView 闭包) 才是 SwiftUI / AppDelegate 关心的层。
