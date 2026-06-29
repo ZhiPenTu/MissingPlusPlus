@@ -1147,3 +1147,53 @@ init(
 - 不要给 test target 用跟主 app target 不一致的 `MACOSX_DEPLOYMENT_TARGET` — swift frontend 会报"compiling for X but module minimum is Y"错。两个必须一致 (都用 26.0)。
 - 不要把 project-level 的 `MACOSX_DEPLOYMENT_TARGET = 13.5` 也改成 26.0 — AGENTS §6 说工程里 13.0/26.0 两个值共存是有意的 (project-level 13.5 让一些 SDK 调用兼容老系统, target-level 26.0 让 release 包跑在 macOS 26+)。Test target 改成 26.0 是 OK 的, 因为它需要跟主 app target 一致。
 - 不要让测试跨测试共享 NotificationCenter observer 状态 —— `WindowController.init` 内部订阅了 `.openSettings`, 多个 test 创建多个 controller 会让 observer 累积。本项目没踩到, 但如果未来加更多 observer-based controller 的 test, 考虑用 `addTeardownBlock` 在每个 test 末尾清理。
+
+## 37. 加 shell-first 入口脚本 (Phase 9)
+
+**目标**: 按 `build-macos-apps:build-run-debug` skill 约定加 `scripts/build_and_run.sh` + `scripts/run_tests.sh`, 把 xcodebuild 长命令包装成 shell 入口, 不让用户记 incantation。
+
+**新增**:
+- `scripts/build_and_run.sh` (90 行) — kill + xcodebuild build + launch
+- `scripts/run_tests.sh` (75 行) — xcodebuild test (支持 `--filter` / `--release` / `--build-only`)
+
+**`build_and_run.sh` 用法**:
+```bash
+./scripts/build_and_run.sh              # default: kill + Debug build + launch
+./scripts/build_and_run.sh --release    # Release build
+./scripts/build_and_run.sh --verify     # build + launch + pgrep verify alive
+./scripts/build_and_run.sh --debug      # build + lldb attach
+./scripts/build_and_run.sh --logs       # build + launch + unified log stream
+```
+
+**`run_tests.sh` 用法**:
+```bash
+./scripts/run_tests.sh                 # run all tests, Debug
+./scripts/run_tests.sh --release       # run all tests, Release
+./scripts/run_tests.sh --filter <expr> # only run tests matching <expr>
+./scripts/run_tests.sh --build-only    # build-for-testing but don't run
+```
+
+**设计要点**:
+- **xcodebuild 走 `DerivedData/` 隔离** — 不污染 `~/Library/Developer/Xcode/DerivedData/`, 跟 `build-dmg.sh` 的 `dist/` 隔离风格一致
+- **default no-flag 路径简单** — 一个 `./scripts/build_and_run.sh` 就跑完 kill + build + launch 整条链
+- **`--filter` 智能补 target 前缀** — 用户写 `ClassName.methodName`, 脚本自动加 `MissingPlusPlusTests/ClassName.methodName` 跟 xcodebuild 的 `-only-testing:` 格式匹配
+- **失败时输出上下文** — `run_tests.sh` 失败会把 log 末尾 60 行重新打出来, 用户不用翻几百行编译输出
+- **不是发布入口** — `build-dmg.sh` 仍然是 DMG 打包入口, 这俩是日常 dev/QA 用
+
+**踩过的坑** (这轮新加):
+1. **`${arr[@]}` 在 `set -u` + 空数组下 unbound** — 第一版用 `TEST_ARG=()` 然后 `"${TEST_ARG[@]}"` 引用, 触发 unbound variable 错。修法: 改成"先初始化空 array, 后面再 append"模式 (`XCODEBUILD_BASE+=(-only-testing:...)`), 这样 array 始终非空, `"${arr[@]}"` 永远安全。
+2. **xcodebuild `--filter` 格式** — `-only-testing:` 期望 `TargetName/ClassName/methodName`, 不只是 `ClassName.methodName`。第一版直接传 `ClassName.methodName` 报 "isn't a member of the specified test plan or scheme"。修法: 脚本 case 判断, 缺斜杠就自动补 `MissingPlusPlusTests/` 前缀。
+
+**验证**:
+- `./scripts/build_and_run.sh --help` → 打印用法
+- `./scripts/run_tests.sh` → `** TEST SUCCEEDED **`, 14/14 tests pass
+- `./scripts/run_tests.sh --filter MissingPlusPlusTests.MenuBuilderTests.test_intensitySubmenu_hasAllThreeLevels` → 单个 test 跑通
+- `./scripts/run_tests.sh --build-only` → `** TEST BUILD SUCCEEDED **`
+
+**保留**: 现有的 `scripts/build-dmg.sh` / `scripts/build-with-sparkle.sh` / `scripts/make-icons.py` / `scripts/patch-pbxproj.py` 全部不动, 这次的 2 个新脚本是 dev workflow 入口, 那些是 release workflow。
+
+**「不要做」(新增 §5.1)**:
+- 不要把 `build_and_run.sh` 做成发布入口 — DMG 打包走 `build-dmg.sh`, 这俩是 daily dev 用的, 别混。
+- 不要让 `run_tests.sh` 用 `tail -1` 之类的取 BUILD result 字符串解析 — 失败时直接 tail 末尾 60 行重新打出来, 人类能读懂, 解析反而脆弱。
+- 不要 hard-code 路径里的 `~/Library/...` 或 `$HOME` — 走脚本所在目录的相对路径 (`cd "$(dirname "${BASH_SOURCE[0]}")/.."`), 任何用户 clone 下来都能直接用。
+- 不要在 `--logs` / `--debug` 模式里用 `&` 后台启动 app 再 attach — `open -n` + `pgrep` + attach 是同步链, 出问题容易 stuck; 让脚本是 foreground 用户能 Ctrl-C 退出。
