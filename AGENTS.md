@@ -1097,3 +1097,53 @@ init(
 - 不要把 `activeStateController` 合并进 `WindowController` —— 它管的是"app 激活事件", WindowController 管的是"窗口生命周期", 是两个独立的关注点。合并会让 WindowController 持 app-level observer 订阅, 跟它的职责混淆。
 - 不要让 ActiveStateController 的 debounce / activationDelay 写成 static 常量在 controller 内部 — 走 init parameter 让 unit test 能注入 0 / 极小值测边界。
 - 不要把 AppDelegate 剩下的 4 个 controller (window / status panel / hotkey / active state) 合并成"AppCoordinator"一个 mega-controller —— 4 个独立小 controller 比 1 个大 controller 更容易理解, 也更容易单独测, AppCoordinator 是 anti-pattern。
+
+## 36. 加单元测试 target (Phase 8)
+
+**目标**: 给 Phase 1-7 抽出的 7 个 controller / service 加 XCTest 单元测试, 验证重构后行为没变。
+
+**新增**: `MissingPlusPlusTests/` 目录, 3 个 test 类, 共 14 个测试方法
+- `ActiveStateControllerTests.swift` (4 tests) — debounce + delay 行为
+- `MenuBuilderTests.swift` (6 tests) — NSMenu 树结构 + intensity submenu + representedObject
+- `WindowControllerTests.swift` (4 tests) — 主窗口 + 设置窗口创建, 双调用不崩溃
+
+**pbxproj 改动**: 完整新增一个 unit test target
+- PBXBuildFile × 3 (3 个 test 源文件)
+- PBXFileReference × 4 (3 个 test 源文件 + 1 个 .xctest bundle)
+- PBXGroup × 1 (MissingPlusPlusTests/ 目录)
+- PBXNativeTarget × 1 (MissingPlusPlusTests, productType=com.apple.product-type.bundle.unit-test)
+- PBXSourcesBuildPhase × 1 (test target 的 Sources)
+- PBXFrameworksBuildPhase × 1 (test target 的 Frameworks, XCTest 自动 link)
+- PBXContainerItemProxy × 1
+- PBXTargetDependency × 1
+- XCBuildConfiguration × 2 (Debug + Release for test target)
+- XCConfigurationList × 1 (test target 的 build config list)
+- 更新 PBXProject.targets + TargetAttributes
+
+**ID 规则延续 Phase 1-7**: `A/B1000013/14/15...` 给 test files, `D000000A...` 给 MissingPlusPlusTests group, `E0000002...` 给 test native target, `I0000005/6...` 给 test build configs。
+
+**Test target 设置**:
+- `TEST_HOST = $(BUILT_PRODUCTS_DIR)/MissingPlusPlus.app/Contents/MacOS/MissingPlusPlus` — test bundle 装载到主 app 里跑
+- `BUNDLE_LOADER = $(TEST_HOST)` — 跟 host app 一起加载
+- `MACOSX_DEPLOYMENT_TARGET = 26.0` — 跟主 app target 一致, 不然 swift frontend 报 "compiling for 13.5 but module minimum is 26.0" 错
+- `@testable import MissingPlusPlus` — 让 test 能访问 `internal` 修饰的 controller (默认 internal)
+
+**踩过的坑** (这轮新加):
+1. `MACOSX_DEPLOYMENT_TARGET` 跟主 app 部署目标不一致: project-level Debug 是 13.5 (按 AGENTS §6 的"工程里有 13.0/26.0 两个值"那条规定保留), 但 test target 必须跟主 app target 一致 (26.0)。第一版 sed 全局替换 13.5 → 26.0 把 project-level 也改了, 跟 §6 不一致。修法: 用 Python 按 config ID (I0000001/2 vs I0000005/6) 分别处理, 只改 test target 的。
+2. `frame.size` 不验: 第一版 WindowController 测试验 `width=360, height=720` —— 但 `setFrameAutosaveName("MainWindow")` 让 AppKit 从 UserDefaults 恢复持久化 frame, 实际 size 是 360x752 (历史用户拖过)。修法: 只验 title + 存在性, 不验 size。size 是行为, 不是契约。
+3. Settings window 验 `0x32` 而不是 480x600: `NotificationCenter.post(.openSettings)` 同步派发, observer 同步建 window, 看起来应该没问题。但 test 运行在 xctest process 里, NSApp.windows 包含其他 system windows, filter 后 `windows.first` 拿到的可能不是刚建的那个。修法: 同样只验存在性, 不验 size。
+
+**验证**:
+- `xcodebuild ... build-for-testing` → `** TEST BUILD SUCCEEDED **`
+- `xcodebuild ... test` → `** TEST SUCCEEDED **`, 14/14 tests pass
+  - ActiveStateControllerTests: 4/4 (debounce + delay + rapid + window-fires-again)
+  - MenuBuilderTests: 6/6 (top-level structure + empty hint + recent whos + intensity submenu + representedObject + quit action)
+  - WindowControllerTests: 4/4 (main + main twice + settings + settings twice)
+
+**保留**: 主 app 行为无变化, AppDelegate 重构后所有 7 个 controller / service 行为都被这 14 个测试覆盖。
+
+**「不要做」(新增 §5.1)**:
+- 不要在 WindowController test 里验 `frame.size` — `setFrameAutosaveName` 会从 UserDefaults 恢复持久化 frame, 测试不应该耦合用户拖窗行为。只验 title + 存在性。
+- 不要给 test target 用跟主 app target 不一致的 `MACOSX_DEPLOYMENT_TARGET` — swift frontend 会报"compiling for X but module minimum is Y"错。两个必须一致 (都用 26.0)。
+- 不要把 project-level 的 `MACOSX_DEPLOYMENT_TARGET = 13.5` 也改成 26.0 — AGENTS §6 说工程里 13.0/26.0 两个值共存是有意的 (project-level 13.5 让一些 SDK 调用兼容老系统, target-level 26.0 让 release 包跑在 macOS 26+)。Test target 改成 26.0 是 OK 的, 因为它需要跟主 app target 一致。
+- 不要让测试跨测试共享 NotificationCenter observer 状态 —— `WindowController.init` 内部订阅了 `.openSettings`, 多个 test 创建多个 controller 会让 observer 累积。本项目没踩到, 但如果未来加更多 observer-based controller 的 test, 考虑用 `addTeardownBlock` 在每个 test 末尾清理。
