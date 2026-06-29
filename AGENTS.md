@@ -849,3 +849,49 @@ Release 删掉, 同时把 source 的 get-task-allow 也删。
 - 不要让 AppDelegate 直接 `let wc = WindowController()` 之后再 `wc = nil` / `wc = WindowController()` 重建 — 工厂方法 + `isReleasedWhenClosed=false` 已经能复用 window 实例, 多份 WindowController 会让 frame autosave 跟 window state 走两份, 容易错位。
 - 不要把 settings 窗口的 `⌘,` 入口搬回 SwiftUI `Settings { SettingsView(...) }` 那一套 — 我们的 SettingsView 在 NSWindow 里手画 (autosave 名 "SettingsWindow"), 跟主窗口同一套视觉风格; 走 `EmptyView` + 监听 `.openSettings` notification 是有意为之, 不要回退。
 - 不要在 `WindowController` 里持 `MissingStore.shared` / `AppPreferences.shared` — 它只是个窗口管理者, 数据流从外面传进来 (rootView 闭包) 才是 SwiftUI / AppDelegate 关心的层。
+
+## 31. AppDelegate 重构: 抽出 MenuBuilder (Phase 3)
+
+**目标**: 把 AppDelegate 里 4 个 `build*` 菜单构造方法 + 2 个 `@objc` action + `RecordRequest` struct 全抽到 `StatusBar/MenuBuilder.swift`, AppDelegate 只剩"new builder + 注入 closure + popUp"的薄层。
+
+**新增**: `MissingPlusPlus/StatusBar/MenuBuilder.swift` (189 行)
+
+**设计**: MenuBuilder 是 class, 私有 `MenuActionRouter` (NSObject 子类) 持 `@objc` 方法, 接收 AppKit 消息后转成 MenuBuilder init 注入的 closure。这样:
+- AppDelegate 完全不再持有 `@objc` action methods (删了 `recordFromMenu` + `openMainWindowFromMenu` 两个)
+- 菜单结构构建 (纯数据) 跟 action dispatch (有副作用) 干净分离
+- closures 用 `[weak self]` 捕获 AppDelegate, 避免循环引用
+- AppDelegate 拿到的 menu 直接 `popUp(...)`, router 自动随 menu 释放
+
+**为什么不直接传 Swift closure 给 `NSMenuItem.action`**:
+- `NSMenuItem.action` 是 `Selector?` (Objective-C selector 类型)
+- Swift closure 不能直接当 selector 传, 只能走 `@objc method` 路由
+- 所以必须有一个 NSObject 子类 (MenuActionRouter) 作为 target, 它的 @objc methods 内部转调 closure
+
+**AppDelegate 改动** (427 → 322 行, -105):
+- 删 `buildStatusMenu` / `buildMoodSubmenu` / `buildWhoItem` / `buildIntensitySubmenu` (4 个纯函数, 移走)
+- 删 `@objc recordFromMenu` / `@objc openMainWindowFromMenu` (2 个 action handler)
+- 删 `private struct RecordRequest` (搬到 MenuBuilder.swift 作 `fileprivate`)
+- 简化 `statusPanelClicked()` — new MenuBuilder + 注入 3 个 closure + build + popUp
+- 新增 `recordMissing(mood:who:intensity:)` 私有 helper 替代原 `recordFromMenu` 内的逻辑
+
+**项目状态变化**:
+- AppDelegate: 581 → 322 行 (-259, 抽 WindowController + MenuBuilder 后)
+- 拆出 3 个文件, 总 731 行 (StatusBar/ + Windows/ + 残余 AppDelegate)
+
+**`project.pbxproj` 改动** (4 处插入, 沿用 ID 规则 `A/B/D1000012...0D`):
+1. PBXBuildFile 段: 新 build file 引用
+2. PBXFileReference 段: 新 file ref
+3. StatusBar group children: 加 `MenuBuilder.swift` (Windows group 留 Phase 2 不动)
+4. PBXSourcesBuildPhase 段: 新 `MenuBuilder.swift in Sources`
+
+**验证**: `xcodebuild -configuration Debug build` → `** BUILD SUCCEEDED **`, 零警告零错误。
+
+**踩过的坑** (这轮新加):
+- 第一版给 `onQuit` 设了默认值 `{ NSApp.terminate(nil) }` — Swift 6 strict concurrency 报 3 个 warning (default value 在 non-isolated context 求值, 不能调 @MainActor `NSApp.terminate`)。修法: 去掉默认值, 让 AppDelegate 在 @MainActor 上下文里显式传。
+
+**保留**: Phase 1 StatusItemPanel、Phase 2 WindowController、3 入口 (Dock / ⌥M / NSMenu) 全部不变, 行为无变化。
+
+**「不要做」(新增 §5.1)**:
+- 不要给 MenuBuilder 的 init parameter 设 default value, 涉及 @MainActor API 的 closure (`NSApp.terminate` / `NSApp.showAboutPanel` 等) — Swift 6 strict concurrency 会在 default value 求值时报 warning。让 caller 显式传, 至少 warning 出现在 @MainActor call site 而不是定义处。
+- 不要把 `MenuActionRouter` 做成 protocol + AppDelegate 直接 conform — 一个 NSObject 子类 + 3 个 @objc method 比 protocol conformance 简单, 也省得 SwiftUI lifecycle 反复重建 AppDelegate 时 router 还得重新 wiring。
+- 不要让 MenuBuilder 持 `MissingStore` / `AppPreferences` 引用 — 它是纯菜单构造器, 数据 (`recentWhos`) 从外面传, actions 用 closure 注入, 这样 unit test 不用 mock 任何 store。

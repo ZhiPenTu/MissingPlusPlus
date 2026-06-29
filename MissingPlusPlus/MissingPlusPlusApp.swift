@@ -171,9 +171,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 会持有最后一份；下次点 panel 重新 build 一次反映最新的 knownWhos。
     @objc private func statusPanelClicked() {
         guard let panel = statusPanel else { return }
-        let menu = buildStatusMenu()
+        // 每次点击都 new MenuBuilder — builder + router 都是短命对象,
+        // 跟 popUp 一起释放。actions 走 closure 注入, 不用在 AppDelegate
+        // 持 @objc method。
+        let builder = MenuBuilder(
+            onRecord: { [weak self] mood, who, intensity in
+                self?.recordMissing(mood: mood, who: who, intensity: intensity)
+            },
+            onOpenMain: { [weak self] in
+                self?.windowController.showMainWindow()
+            },
+            onQuit: {
+                // ⌘Q 已经在 SwiftUI app menu 注册, 这里菜单再 bind 一次
+                // 让用户能从状态栏菜单退出
+                NSApp.terminate(nil)
+            }
+        )
+        let menu = builder.build(
+            recentWhos: Array(MissingStore.shared.knownWhos.prefix(5))
+        )
         statusMenu = menu
-        // at: (0, 0) in panel.content → 菜单顶端对齐 panel 底端，
+        // at: (0, 0) in panel.content → 菜单顶端对齐 panel 底端,
         // 系统自动处理"放不下就放上面"的越界翻转
         menu.popUp(
             positioning: nil,
@@ -182,128 +200,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }
 
-    private func buildStatusMenu() -> NSMenu {
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-
-        // 5 mood 顶层项 — 每个挂一个 who 选择 submenu
-        let recentWhos = Array(MissingStore.shared.knownWhos.prefix(5))
-        for mood in Mood.allCases {
-            let item = NSMenuItem(
-                title: "\(mood.emoji)  \(mood.label)",
-                action: nil,
-                keyEquivalent: ""
-            )
-            item.submenu = buildMoodSubmenu(for: mood, recentWhos: recentWhos)
-            menu.addItem(item)
-        }
-
-        menu.addItem(.separator())
-
-        let openMain = NSMenuItem(
-            title: "在主窗口新建记录…",
-            action: #selector(openMainWindowFromMenu),
-            keyEquivalent: ""
-        )
-        openMain.target = self
-        menu.addItem(openMain)
-
-        menu.addItem(.separator())
-
-        // ⌘Q 已经在 SwiftUI app menu 注册 (CommandGroup(.appTermination)),
-        // 这里再 bind 一次让菜单显示快捷键提示
-        let quit = NSMenuItem(
-            title: "退出 Missing++",
-            action: #selector(NSApplication.terminate(_:)),
-            keyEquivalent: "q"
-        )
-        menu.addItem(quit)
-
-        return menu
-    }
-
-    private func buildMoodSubmenu(for mood: Mood, recentWhos: [String]) -> NSMenu {
-        let sub = NSMenu()
-        sub.autoenablesItems = false
-
-        // 不要 "TA" 默认 fallback — 用户每次都指定具体对象, "TA" 占位无意义。
-        // 直接列 recent whos；每个 who 是一个 submenu, 强度(一般/非常/无)在第三级
-        if recentWhos.isEmpty {
-            let hint = NSMenuItem(
-                title: "(还没有记录过对象)",
-                action: nil,
-                keyEquivalent: ""
-            )
-            hint.isEnabled = false
-            sub.addItem(hint)
-            sub.addItem(.separator())
-        } else {
-            for who in recentWhos {
-                sub.addItem(buildWhoItem(who: who, mood: mood))
-            }
-            sub.addItem(.separator())
-        }
-
-        let custom = NSMenuItem(
-            title: "在主窗口记录…",
-            action: #selector(openMainWindowFromMenu),
-            keyEquivalent: ""
-        )
-        custom.target = self
-        sub.addItem(custom)
-
-        return sub
-    }
-
-    private func buildWhoItem(who: String, mood: Mood) -> NSMenuItem {
-        let item = NSMenuItem(
-            title: who,
-            action: nil,
-            keyEquivalent: ""
-        )
-        item.submenu = buildIntensitySubmenu(who: who, mood: mood)
-        return item
-    }
-
-    private func buildIntensitySubmenu(who: String, mood: Mood) -> NSMenu {
-        let sub = NSMenu()
-        sub.autoenablesItems = false
-        // 一般 → 非常 → 无: 一般最常用, 排最前让 Return 直接 = 默认强度
-        let order: [Intensity] = [.mild, .strong, .none]
-        for intensity in order {
-            let item = NSMenuItem(
-                title: intensity.label,
-                action: #selector(recordFromMenu(_:)),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = RecordRequest(
-                mood: mood, who: who, intensity: intensity
-            )
-            sub.addItem(item)
-        }
-        return sub
-    }
-
-    @objc private func recordFromMenu(_ sender: NSMenuItem) {
-        guard let req = sender.representedObject as? RecordRequest else { return }
-        let entry = Missing(who: req.who, mood: req.mood, intensity: req.intensity)
-        MissingStore.shared.add(entry)
+    private func recordMissing(mood: Mood, who: String, intensity: Intensity) {
+        MissingStore.shared.add(Missing(who: who, mood: mood, intensity: intensity))
         // 后续流程: MissingStore.add → post .missingStoreDidAdd →
         // handleMissingAdded 收到 → 状态栏图标变 mood 色 + post 系统通知
-    }
-
-    @objc private func openMainWindowFromMenu() {
-        // 菜单会自动 dismiss，showMainWindow 是 main 窗口标准入口
-        showMainWindow()
-    }
-
-    /// NSMenuItem.representedObject 的载体 — 把 (mood, who, intensity)
-    /// 一起传给 recordFromMenu。struct 比 tuple 友好 (能 as? 强转)。
-    private struct RecordRequest {
-        let mood: Mood
-        let who: String
-        let intensity: Intensity
     }
 
     // MARK: - Dock 点击
