@@ -22,7 +22,7 @@ final class MenuBuilder {
     /// - Parameters:
     ///   - onRecord: 用户选了 (mood, who, intensity) 组合时调用
     ///   - onOpenMain: 用户选 "在主窗口记录…" 时调用
-    ///   - onQuit: 用户选 "退出 Missing++" 时调用
+    ///   - onQuit: 用户选 "退出 心安日记" 时调用
     init(
         onRecord: @escaping (Mood, String, Intensity) -> Void,
         onOpenMain: @escaping () -> Void,
@@ -68,7 +68,7 @@ final class MenuBuilder {
         // ⌘Q 已经在 SwiftUI app menu 注册 (CommandGroup(.appTermination)),
         // 这里再 bind 一次让菜单显示快捷键提示
         let quit = NSMenuItem(
-            title: "退出 Missing++",
+            title: "退出 心安日记",
             action: #selector(MenuActionRouter.quitFromMenu(_:)),
             keyEquivalent: "q"
         )

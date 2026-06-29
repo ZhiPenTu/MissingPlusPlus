@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sparkle scaffolding for Missing++.
+# Sparkle scaffolding for 心安日记.
 #
 # This script does NOT actually integrate Sparkle (it requires the user to
 # sign up for a Sparkle account, host an appcast feed, and resolve several
@@ -60,12 +60,12 @@ cat > "$APPCAST" <<'XML'
      xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
      xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>Missing++ Changelog</title>
+    <title>心安日记 Changelog</title>
     <link>https://your-domain.example/missingpp/appcast.xml</link>
-    <description>Most recent changes for Missing++.</description>
+    <description>Most recent changes for 心安日记.</description>
     <language>zh-CN</language>
     <item>
-      <title>Missing++ 1.0</title>
+      <title>心安日记 1.0</title>
       <sparkle:version>1</sparkle:version>
       <sparkle:shortVersionString>1.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>

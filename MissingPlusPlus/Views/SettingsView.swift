@@ -519,7 +519,7 @@ struct SettingsView: View {
 
         guard panel.runModal() == .OK, let src = panel.url else { return }
         guard let incoming = storage.importItems(from: src) else {
-            setStatus("文件解析失败，请确认是 Missing++ 导出的 JSON。", error: true)
+            setStatus("文件解析失败，请确认是 心安日记 导出的 JSON。", error: true)
             return
         }
 

@@ -26,7 +26,7 @@ final class MenuBuilderTests: XCTestCase {
 
         // 退出是最后一个 item
         let quitItem = menu.items[8]
-        XCTAssertEqual(quitItem.title, "退出 Missing++")
+        XCTAssertEqual(quitItem.title, "退出 心安日记")
         XCTAssertEqual(quitItem.keyEquivalent, "q")
     }
 

@@ -28,7 +28,7 @@ DIST_DIR="$PROJECT_DIR/dist"
 # 例子: VERSION=1.2.3 ./scripts/build-dmg.sh → MissingPlusPlus-1.2.3.dmg
 VERSION="${VERSION:-1.0}"
 DMG_NAME="MissingPlusPlus-${VERSION}.dmg"
-VOL_NAME="Missing++"
+VOL_NAME="心安日记"
 STAGE_DIR="$BUILD_DIR/dmg-staging"
 NOTARY_PROFILE="${NOTARY_PROFILE:-missingpp-notary}"
 

@@ -6,7 +6,7 @@
 
 ## 1. 背景
 
-`Missing++` 是一个 macOS 菜单栏 app（`AGENTS.md §1`），目前状态栏图标是写死的：始终显示一个按 mood 染色的 SF Symbol `heart.fill`（`MissingPlusPlusApp.swift:150-178` 的 `applyMenuBarIcon`）。
+`心安日记` (代码名 `MissingPlusPlus`) 是一个 macOS 菜单栏 app（`AGENTS.md §1`），目前状态栏图标是写死的：始终显示一个按 mood 染色的 SF Symbol `heart.fill`（`MissingPlusPlusApp.swift:150-178` 的 `applyMenuBarIcon`）。
 
 历史上手动试过 4 条渲染路线（`AGENTS.md §14-§19`），最终定在 heart.fill + lockFocus + sourceAtop 染色。但用户在 settings 里没有"开关"和"换样式"的入口 — 这是这一轮要补的。
 

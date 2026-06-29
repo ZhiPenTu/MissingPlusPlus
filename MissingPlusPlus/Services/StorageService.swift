@@ -73,7 +73,7 @@ final class StorageService: ObservableObject {
             result = try? JSONDecoder().decode([Missing].self, from: data)
         }
         if let coordError {
-            NSLog("[Missing++] StorageService read coord error: \(coordError)")
+            NSLog("[MissingPlusPlus] StorageService read coord error: \(coordError)")
         }
         return result
     }
@@ -96,7 +96,7 @@ final class StorageService: ObservableObject {
             try? data.write(to: coordinatedURL, options: .atomic)
         }
         if let coordError {
-            NSLog("[Missing++] StorageService write coord error: \(coordError)")
+            NSLog("[MissingPlusPlus] StorageService write coord error: \(coordError)")
         }
     }
 
@@ -174,7 +174,7 @@ final class StorageService: ObservableObject {
             try data.write(to: destination, options: .atomic)
             return true
         } catch {
-            NSLog("[Missing++] export failed: \(error)")
+            NSLog("[MissingPlusPlus] export failed: \(error)")
             return false
         }
     }
@@ -216,11 +216,11 @@ final class StorageService: ObservableObject {
                 activeSecurityScopedURL = url
                 return url.appendingPathComponent("missings.json", isDirectory: false)
             } else {
-                NSLog("[Missing++] bookmark resolved but security scope denied")
+                NSLog("[MissingPlusPlus] bookmark resolved but security scope denied")
                 return nil
             }
         } catch {
-            NSLog("[Missing++] bookmark resolution failed: \(error)")
+            NSLog("[MissingPlusPlus] bookmark resolution failed: \(error)")
             return nil
         }
     }

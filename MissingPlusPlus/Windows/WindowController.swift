@@ -49,7 +49,7 @@ final class WindowController {
         } else {
             mainWindow = makeWindow(
                 frameName: Self.mainWindowFrameName,
-                title: "思念计数器",
+                title: "心安日记",
                 contentSize: Self.mainWindowSize,
                 styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 rootView: MenuBarContent(store: MissingStore.shared)
@@ -67,7 +67,7 @@ final class WindowController {
         } else {
             settingsWindow = makeWindow(
                 frameName: Self.settingsWindowFrameName,
-                title: "Missing++ 设置",
+                title: "心安日记 设置",
                 contentSize: Self.settingsWindowSize,
                 styleMask: [.titled, .closable, .miniaturizable],
                 rootView: SettingsView(

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 为 Missing++ 加 3 个 Missing 扩展字段（triggerTags / resolvedAt / realityCheck）+ 8 个预定义 trigger 标签 + 1 个新 sheet view + 3 个 insight 统计卡片，让焦虑型依恋用户能看见自己的 trigger 模式、累积"浪会过去"证据、并在浪来时用 DBT Check the Facts 工具自我检验。
+**Goal:** 为 心安日记 加 3 个 Missing 扩展字段（triggerTags / resolvedAt / realityCheck）+ 8 个预定义 trigger 标签 + 1 个新 sheet view + 3 个 insight 统计卡片，让焦虑型依恋用户能看见自己的 trigger 模式、累积"浪会过去"证据、并在浪来时用 DBT Check the Facts 工具自我检验。
 
 **Architecture:** 数据层（Missing + RealityCheck + TriggerTag）→ 业务层（MissingStore 3 方法 + AppPreferences 3 toggle）→ UI 层（NewMissingForm 3 处改动 / HistoryList 卡片扩展 / StatisticsView 3 insight 卡片 / SettingsView section / AppDelegate 通知 body）。所有新字段 Codable 向前兼容（decodeIfPresent + 未知 rawValue 过滤）。TriggerTag 预定义 8 个不开用户自定义。
 

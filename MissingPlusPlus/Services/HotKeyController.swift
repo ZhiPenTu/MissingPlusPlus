@@ -22,7 +22,7 @@ import Carbon
 final class HotKeyController {
     private var hotKeyRef: EventHotKeyRef?
 
-    /// "MSPM" (Missing++ PinYin) — Carbon hotkey signature, 4 字符 OSType。
+    /// "MSPM" (MissingPlusPlus PinYin) — Carbon hotkey signature, 4 字符 OSType。
     /// 全局唯一, 跟其他可能的 hotkey 区分 (理论上其他 app 也用类似 OSType)。
     private static let signature: OSType = 0x4D53504D
 

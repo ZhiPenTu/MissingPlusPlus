@@ -6,7 +6,7 @@
 
 ## 1. 背景
 
-`Missing++` 是一个面向**焦虑型依恋人格**的 macOS 菜单栏 app（`AGENTS.md §1`）。当前模型（`Missing.swift`）只记 `who + mood + intensity + createdAt`，核心动作是"记一笔想念"。
+`心安日记` (代码名 `MissingPlusPlus`) 是一个面向**焦虑型依恋人格**的 macOS 菜单栏 app（`AGENTS.md §1`）。当前模型（`Missing.swift`）只记 `who + mood + intensity + createdAt`，核心动作是"记一笔想念"。
 
 焦虑型依恋的核心痛点（attachment theory + DBT/CBT 干预）：
 

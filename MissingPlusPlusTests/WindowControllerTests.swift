@@ -10,8 +10,8 @@ final class WindowControllerTests: XCTestCase {
     func test_showMainWindow_createsWindowWithExpectedTitle() {
         _ = WindowController()
         // 通过 NSApp.windows 找到新窗口
-        let windows = NSApp.windows.filter { $0.title == "思念计数器" }
-        XCTAssertGreaterThanOrEqual(windows.count, 1, "Should have at least one 思念计数器 window")
+        let windows = NSApp.windows.filter { $0.title == "心安日记" }
+        XCTAssertGreaterThanOrEqual(windows.count, 1, "Should have at least one 心安日记 window")
     }
 
     func test_showMainWindowTwice_doesNotCrash() {
@@ -20,7 +20,7 @@ final class WindowControllerTests: XCTestCase {
         // 第二次应该是 "bring to front" 路径, 不创建新窗口
         controller.showMainWindow()
 
-        let windows = NSApp.windows.filter { $0.title == "思念计数器" }
+        let windows = NSApp.windows.filter { $0.title == "心安日记" }
         XCTAssertGreaterThanOrEqual(windows.count, 1)
     }
 
@@ -30,8 +30,8 @@ final class WindowControllerTests: XCTestCase {
         _ = WindowController()
         NotificationCenter.default.post(name: .openSettings, object: nil)
         // NotificationCenter.post 同步派发, observer 同步执行
-        let windows = NSApp.windows.filter { $0.title == "Missing++ 设置" }
-        XCTAssertGreaterThanOrEqual(windows.count, 1, "Should have at least one Missing++ 设置 window")
+        let windows = NSApp.windows.filter { $0.title == "心安日记 设置" }
+        XCTAssertGreaterThanOrEqual(windows.count, 1, "Should have at least one 心安日记 设置 window")
     }
 
     func test_settingsWindowTwice_doesNotCrash() {
@@ -39,7 +39,7 @@ final class WindowControllerTests: XCTestCase {
         NotificationCenter.default.post(name: .openSettings, object: nil)
         NotificationCenter.default.post(name: .openSettings, object: nil)
 
-        let windows = NSApp.windows.filter { $0.title == "Missing++ 设置" }
+        let windows = NSApp.windows.filter { $0.title == "心安日记 设置" }
         XCTAssertGreaterThanOrEqual(windows.count, 1)
     }
 }

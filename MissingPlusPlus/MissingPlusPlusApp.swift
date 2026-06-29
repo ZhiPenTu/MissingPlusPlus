@@ -3,6 +3,9 @@ import AppKit
 
 /// 菜单栏 app 入口。
 ///
+/// 中文产品名：**心安日记** (CFBundleDisplayName)。代码名沿用 `MissingPlusPlus`
+/// (CFBundleName / Bundle ID / 文件系统路径, 不动 — 改这个会丢用户数据)。
+///
 /// AppDelegate 现在是纯 wiring 层 — 创建 4 个 controller, 转发 3 个 entry point
 /// (Dock click / ⌥M / 状态栏 panel click) + 1 个 dock reopen 回调, 订阅
 /// .missingStoreDidAdd 转给 NotificationService。具体的实现细节在
@@ -30,12 +33,12 @@ struct MissingPlusPlusApp: App {
 
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("关于 Missing++") {
+                Button("关于 心安日记") {
                     NSApp.orderFrontStandardAboutPanel(nil)
                 }
             }
             CommandGroup(replacing: .appTermination) {
-                Button("退出 Missing++") {
+                Button("退出 心安日记") {
                     NSApp.terminate(nil)
                 }
                 .keyboardShortcut("q", modifiers: .command)

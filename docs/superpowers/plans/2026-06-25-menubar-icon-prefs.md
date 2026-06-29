@@ -151,7 +151,7 @@ enum MenuBarIconRenderer {
 
     private static func applyHeart(to button: NSStatusBarButton, mood: Mood) {
         guard let base = NSImage(systemSymbolName: "heart.fill",
-                                 accessibilityDescription: "思念计数器") else {
+                                 accessibilityDescription: "心安日记") else {
             // SF Symbol 拿不到时降级到 emoji（避免 cell 空掉）
             button.title = mood.emoji
             button.font = NSFont(name: "AppleColorEmoji", size: 14)
@@ -603,7 +603,7 @@ screencapture -x /tmp/settings-open.png
 osascript -e 'tell application "System Events" to get name of every window of (every process whose name contains "MissingPlusPlus")'
 ```
 
-预期：出现"Missing++ 设置"窗口。
+预期：出现"心安日记 设置"窗口。
 
 - [ ] **Step 7: 退出 app**
 
@@ -814,7 +814,7 @@ sleep 1
 osascript -e 'tell application "System Events" to get name of every window of (every process whose name contains "MissingPlusPlus")'
 ```
 
-预期：能看到 "Missing++ 设置" 窗口名 — 即使状态栏图标关了 settings 也能开（`AGENTS.md §17` 兜底）。
+预期：能看到 "心安日记 设置" 窗口名 — 即使状态栏图标关了 settings 也能开（`AGENTS.md §17` 兜底）。
 
 - [ ] **Step 9: 验证 visibility 关闭时 Dock / ⌥M 仍能开主窗口**
 
@@ -825,7 +825,7 @@ sleep 1
 osascript -e 'tell application "System Events" to get name of every window of (every process whose name contains "MissingPlusPlus")'
 ```
 
-预期：能看到 "思念计数器" 主窗口。
+预期：能看到 "心安日记" 主窗口。
 
 - [ ] **Step 10: 重启 app 验证 prefs 持久化**
 

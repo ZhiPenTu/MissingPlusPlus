@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 给 Missing++ 加 3 个 self-soothing sub-sheet（5-4-3-2-1 grounding / self-compassion / cooldown activities），让焦虑型用户在浪来时用 30 秒手点引导走出 emotion flooding。
+**Goal:** 给 心安日记 加 3 个 self-soothing sub-sheet（5-4-3-2-1 grounding / self-compassion / cooldown activities），让焦虑型用户在浪来时用 30 秒手点引导走出 emotion flooding。
 
 **Architecture:** 3 个新 view（GroundingSheet / SelfCompassionView / CooldownSheet）+ 1 个新 model（CooldownActivities + SelfCompassionPhrases enums）+ AppPreferences 加 1 个 `@Published cooldownActivities`。3 个 sub-sheet 都用 `@Environment(\.dismiss)` + `.sheet(isPresented:)` 模式。3 个入口：RealityCheckSheet 底部 / HistoryList 卡片底部 / NewMissingForm 5 秒 inline link。
 

@@ -80,7 +80,7 @@ enum MenuBarIconRenderer {
     /// SF Symbol heart.fill + lockFocus + sourceAtop 染色（AGENTS.md §14 验证路径）
     private static func drawHeart(in rect: NSRect, mood: Mood) {
         guard let base = NSImage(systemSymbolName: "heart.fill",
-                                 accessibilityDescription: "思念计数器") else {
+                                 accessibilityDescription: "心安日记") else {
             // SF Symbol 拿不到时降级到 emoji（避免 cell 空掉）
             drawText(in: rect, text: mood.emoji, font: emojiFont())
             return

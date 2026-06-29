@@ -235,7 +235,7 @@ struct NewMissingForm: View {
                     .font(.system(size: 18, weight: .semibold))
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text("思念计数器")
+                Text("心安日记")
                     .font(.headline)
                 HStack(spacing: 4) {
                     Text("已记录 \(store.items.count) 个时刻")

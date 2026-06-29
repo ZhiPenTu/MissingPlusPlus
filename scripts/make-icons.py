@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the app icon (.appiconset PNGs + legacy .icns) and the
-5 mood-colored menu bar template images for the Missing++ project.
+5 mood-colored menu bar template images for the 心安日记 (MissingPlusPlus) project.
 
 Output:
   MissingPlusPlus/Assets.xcassets/AppIcon.appiconset/icon_*.png
