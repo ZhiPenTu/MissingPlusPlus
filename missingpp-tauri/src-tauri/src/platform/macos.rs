@@ -12,9 +12,9 @@ use crate::data::{Mood, Store};
 /// Build the menu bar tray icon and attach it to the app.
 pub fn setup_tray<R: Runtime>(app: &App<R>) -> Result<()> {
     let store = app.state::<Store>();
-    let initial_mood = current_mood(&store);
-    let icon = load_mood_icon(initial_mood)?;
     let app_handle: AppHandle<R> = app.handle().clone();
+    let initial_mood = current_mood(&store);
+    let icon = load_mood_icon(&app_handle, initial_mood)?;
 
     // Build context menu items using MenuItemBuilder (avoids static vs builder ambiguity)
     let show = MenuItemBuilder::with_id("show", "打开 Missing++").enabled(true).build(&app_handle)?;
@@ -70,7 +70,7 @@ fn current_mood(store: &Store) -> Mood {
     store.snapshot().first().map(|m| m.mood).unwrap_or(Mood::Longing)
 }
 
-fn load_mood_icon(mood: Mood) -> Result<Image<'static>> {
+fn load_mood_icon<R: tauri::Runtime>(app: &tauri::AppHandle<R>, mood: Mood) -> Result<Image<'static>> {
     let name = match mood {
         Mood::Happy => "MenuBarIcon-happy",
         Mood::Joyful => "MenuBarIcon-joyful",
@@ -78,14 +78,15 @@ fn load_mood_icon(mood: Mood) -> Result<Image<'static>> {
         Mood::Sad => "MenuBarIcon-sad",
         Mood::Longing => "MenuBarIcon-longing",
     };
-    let path = icon_path(name);
+    let path = icon_path(app, &format!("{}.png", name));
     Image::from_path(&path).with_context(|| format!("load icon from {:?}", path))
 }
 
-fn icon_path(name: &str) -> PathBuf {
-    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
-        .unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(manifest_dir).join("icons").join(format!("{}.png", name))
+fn icon_path<R: tauri::Runtime>(app: &tauri::AppHandle<R>, name: &str) -> PathBuf {
+    use tauri::path::BaseDirectory;
+    app.path()
+        .resolve(format!("icons/{}", name), BaseDirectory::Resource)
+        .unwrap_or_else(|_| PathBuf::from(format!("icons/{}", name)))
 }
 
 fn toggle_main_window<R: Runtime>(app: AppHandle<R>) {
@@ -109,7 +110,7 @@ pub fn update_tray_icon<R: Runtime>(app: &AppHandle<R>) {
     if let Some(tray) = app.tray_by_id("main") {
         let store = app.state::<Store>();
         let mood = current_mood(&store);
-        if let Ok(icon) = load_mood_icon(mood) {
+        if let Ok(icon) = load_mood_icon(app, mood) {
             let _ = tray.set_icon(Some(icon));
             let _ = tray.set_tooltip(Some(format!("Missing++ · {}", mood.label())));
         }
@@ -121,17 +122,13 @@ pub fn setup_global_hotkey<R: Runtime>(app: &App<R>) -> Result<()> {
 
     let shortcut = Shortcut::new(Some(Modifiers::ALT), Code::KeyM);
 
-    app.handle()
-        .plugin(
-            tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(move |app, _shortcut, event| {
-                    if event.state == ShortcutState::Pressed {
-                        toggle_main_window(app.clone());
-                    }
-                })
-                .build(),
-        )
-        .context("register global shortcut plugin")?;
+    app.global_shortcut()
+        .on_shortcut(shortcut, move |app, _shortcut, event| {
+            if event.state == ShortcutState::Pressed {
+                toggle_main_window(app.clone());
+            }
+        })
+        .context("register ⌥M handler")?;
 
     app.global_shortcut()
         .register(shortcut)
