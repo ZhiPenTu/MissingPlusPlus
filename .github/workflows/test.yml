@@ -38,8 +38,9 @@ jobs:
       - name: Build (Debug)
         run: |
           set -euo pipefail
-          # CI runner 缺 Mac Development cert, 用 ad-hoc 签名绕开
-          # (本地 build 仍然用真 cert + DEVELOPMENT_TEAM=J79GWDGRCY)
+          # CI runner 是 macOS 15.7.7, 跑不了 deployment target 26.0 的 test
+          # (Xcode 拒绝: 'My Mac doesn't match macOS 26.0 deployment target')
+          # Test 临时降到 15.0 让 CI 能跑, release build 仍然走 26.0
           xcodebuild \
             -project MissingPlusPlus.xcodeproj \
             -scheme MissingPlusPlus \
@@ -49,9 +50,13 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            MACOSX_DEPLOYMENT_TARGET=15.0 \
             build-for-testing
 
       - name: Run Tests
+        env:
+          # run_tests.sh 内部用 xcodebuild test, 也需要降 target
+          MACOSX_DEPLOYMENT_TARGET: "15.0"
         run: ./scripts/run_tests.sh
         # run_tests.sh 输出末尾 30 行 (build result + test summary),
         # 失败时 tail 末尾 60 行重新打
