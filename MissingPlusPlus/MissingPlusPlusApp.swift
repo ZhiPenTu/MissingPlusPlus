@@ -47,6 +47,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusPanelController: StatusPanelController?
     // Carbon ⌥M 全局热键走 HotKeyController, AppDelegate 不再自己装
     private var hotKeyController: HotKeyController?
+    // App 激活兜底 (拉主窗口) 走 ActiveStateController, AppDelegate 不再自己 debounce
+    private var activeStateController: ActiveStateController?
 
     // MARK: - 启动
 
@@ -75,6 +77,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.windowController.showMainWindow()
             }
         )
+        // App 激活兜底 — 监听 .didBecomeActiveNotification, debounce 0.5s 后
+        // 拉主窗口 (跟 applicationShouldHandleReopen 互补)
+        activeStateController = ActiveStateController(
+            onShouldRaiseMainWindow: { [weak self] in
+                self?.windowController.showMainWindow()
+            }
+        )
 
         // 监听新记录 → 更新状态栏图标 + 发通知
         NotificationCenter.default.addObserver(
@@ -83,32 +92,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .missingStoreDidAdd,
             object: nil
         )
-        // 监听 app 激活（Finder 打开 / Spotlight 启动 / alt-tab 切回来）
-        // → 兜底拉主窗口。`applicationShouldHandleReopen` 只在 hidden app
-        // 被 Dock 召唤那条路径触发, 没这条的话用户从 Finder / Spotlight 打开
-        // 只会看到状态栏 panel (macOS 26 经常被 Control Center 盖住), 找不到主窗口。
-        // 0.5s debounce 防抖: 快速 alt-tab 不会反复开/关主窗口。
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleAppDidBecomeActive),
-            name: NSApplication.didBecomeActiveNotification,
-            object: nil
-        )
-    }
-
-    // MARK: - 激活兜底 (主窗口)
-
-    private var lastBecomeActiveAt: Date = .distantPast
-    private static let becomeActiveDebounce: TimeInterval = 0.5
-
-    @objc private func handleAppDidBecomeActive() {
-        let now = Date()
-        guard now.timeIntervalSince(lastBecomeActiveAt) >= Self.becomeActiveDebounce else { return }
-        lastBecomeActiveAt = now
-        // 0.5s 之后才开主窗口, 让 macOS 自己的窗口切换动画跑完, 避免和系统动画打架。
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.showMainWindow()
-        }
     }
 
     // MARK: - Dock 点击
