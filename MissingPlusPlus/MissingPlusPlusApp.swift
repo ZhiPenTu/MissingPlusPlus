@@ -1,6 +1,5 @@
 import SwiftUI
 import AppKit
-import Carbon
 
 /// 菜单栏 app 入口。
 ///
@@ -46,8 +45,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let windowController = WindowController()
     private var statusPanel: StatusItemPanel?
     private var statusMenu: NSMenu?
-    private var hotKeyRef: EventHotKeyRef?
-    private var hotKeyHandler: () -> Void = {}
+    // Carbon ⌥M 全局热键走 HotKeyController, AppDelegate 不再自己装
+    private var hotKeyController: HotKeyController?
 
     // MARK: - 启动
 
@@ -59,7 +58,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // (`StatusItemPanel`), 不受这个 routing 影响, 所以可以放心
         // 显示 dock icon 同时保留菜单栏 panel。
         installStatusPanel()
-        installGlobalHotKey()
+        // ⌥M 全局热键 — Carbon EventHotKey 走 HotKeyController
+        hotKeyController = HotKeyController(
+            spec: .optionM,
+            onTrigger: { [weak self] in
+                self?.windowController.showMainWindow()
+            }
+        )
 
         // 监听新记录 → 更新状态栏图标 + 发通知
         NotificationCenter.default.addObserver(
@@ -247,35 +252,4 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - 全局快捷键 (⌥M)
 
-    private func installGlobalHotKey() {
-        hotKeyHandler = { [weak self] in
-            DispatchQueue.main.async {
-                self?.showMainWindow()
-            }
-        }
-        registerHotKey(keyCode: UInt32(kVK_ANSI_M), modifiers: UInt32(optionKey))
-    }
-
-    private func registerHotKey(keyCode: UInt32, modifiers: UInt32) {
-        let hotKeyID = EventHotKeyID(signature: OSType(0x4D53504D), id: 1)
-        var eventType = EventTypeSpec(
-            eventClass: OSType(kEventClassKeyboard),
-            eventKind: UInt32(kEventHotKeyPressed)
-        )
-        InstallEventHandler(
-            GetApplicationEventTarget(),
-            { _, _, userData in
-                let handler = unsafeBitCast(userData, to: AppDelegate.self)
-                handler.hotKeyHandler()
-                return noErr
-            },
-            1, &eventType,
-            Unmanaged.passUnretained(self).toOpaque(),
-            nil
-        )
-        RegisterEventHotKey(
-            keyCode, modifiers, hotKeyID,
-            GetApplicationEventTarget(), 0, &hotKeyRef
-        )
-    }
 }

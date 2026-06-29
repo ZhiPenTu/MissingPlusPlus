@@ -938,3 +938,54 @@ Release 删掉, 同时把 source 的 get-task-allow 也删。
 - 不要把 `generateAINotificationBody` 从 AIService.swift 搬到 NotificationService.swift — 它是 AI 内容生成器, 跟 `generateAILetter` / `generateAIRealityCheck` 是同一类, 应该住在 AIService.swift。NotificationService 调它来填 body 就好。
 - 不要让 NotificationService 持 `MissingStore` / `AppPreferences` 引用 — 它是"接 Missing 对象, 投递通知"的无状态服务, 数据从外面传进来 (`for missing: Missing` 参数)。持 store 引用会变成第二个 MissingStoreDidAdd observer, 重复触发。
 - 不要把 `UNUserNotificationCenter.requestAuthorization` 抽成单独的 "AuthManager" — 系统自带去重, 重复调也是 no-op, 没必要单独一层。
+
+## 33. AppDelegate 重构: 抽出 HotKeyController (Phase 5)
+
+**目标**: 把 AppDelegate 里 Carbon EventHotKey 注册 + handler 派发抽到 `Services/HotKeyController.swift`, AppDelegate 不再 import Carbon, 不再直接调 Carbon API。
+
+**新增**: `MissingPlusPlus/Services/HotKeyController.swift` (97 行)
+
+**设计**: `@MainActor final class HotKeyController`, 每 AppDelegate 一份 (跟 WindowController 模式一致, 不是单例)。
+
+**API**:
+```swift
+init(
+    spec: Spec,           // .optionM 预定义 / .custom(keyCode:modifiers:) 自定义
+    onTrigger: @escaping () -> Void
+)
+```
+
+AppDelegate 调 `HotKeyController(spec: .optionM, onTrigger: ...)` 就行, 不用 import Carbon, 不用知道 `kVK_ANSI_M` / `optionKey` 这些 raw constants。
+
+**Carbon C 回调的 closure 持有**: 用 `Box<T>` 包装 + `Unmanaged.passRetained`。
+- 原代码: `unsafeBitCast(userData, to: AppDelegate.self).hotKeyHandler()` —— 把 raw pointer 强转回 AppDelegate 实例引用, 跟具体 class 耦合, type-pun 错位就 crash
+- 新代码: `Box<() -> Void>` 稳定持有 closure, callback 里 unbox + `DispatchQueue.main.async` 派发到 main actor, HotKeyController 不依赖具体调用方的 class
+
+**AppDelegate 改动** (281 → 255 行, -26):
+- 删 `hotKeyRef: EventHotKeyRef?` / `hotKeyHandler: () -> Void` 属性
+- 删 `installGlobalHotKey()` + `registerHotKey(keyCode:modifiers:)` 方法 (共 28 行)
+- 加 `hotKeyController: HotKeyController?` 属性
+- `applicationDidFinishLaunching` 里 `hotKeyController = HotKeyController(spec: .optionM, onTrigger: ...)`
+- 删 `import Carbon` (AppDelegate 不再直接用 Carbon API)
+
+**项目状态变化**:
+- AppDelegate: 581 → 255 行 (-326, 抽 5 个 controller / service 后)
+- 拆出 5 个文件, 总 576 行 (StatusBar/ + Windows/ + Services/NotificationService + Services/HotKeyController)
+
+**`project.pbxproj` 改动** (4 处插入, 沿用 ID 规则 `A/B/D1000012...0F`):
+1. PBXBuildFile 段
+2. PBXFileReference 段
+3. Services group children: 加在 `NotificationService.swift` 后面
+4. PBXSourcesBuildPhase 段
+
+**验证**: `xcodebuild -configuration Debug build` → `** BUILD SUCCEEDED **`, 零警告零错误。
+
+**踩过的坑** (这轮新加):
+- 第一版 init 接受 `keyCode: UInt32, modifiers: UInt32` 两个 raw 参数, AppDelegate 那边就还得 `import Carbon` 才能写 `kVK_ANSI_M` / `optionKey`。修法: 加 `enum Spec { case optionM / .custom(keyCode:modifiers:) }`, AppDelegate 调 `.optionM` 就好, 不碰 Carbon constants。
+
+**保留**: Phase 1-4 所有 controller / service, ⌥M 行为无变化 (Carbon 注册 + main thread 派发 + handler 闭包执行)。
+
+**「不要做」(新增 §5.1)**:
+- 不要在 HotKeyController 的 C 回调里用 `unsafeBitCast` 把 raw pointer 强转回具体 class —— Box<T> 才是稳定的 closure 持有方式, 跟具体 caller 类型解耦。
+- 不要在 AppDelegate 调 HotKeyController 时传 raw `kVK_ANSI_M` / `optionKey` —— 用 `Spec.optionM` 预定义, 让 AppDelegate 不必 import Carbon, 也不必知道 Carbon 内部用的是哪个 constants。
+- 不要给 HotKeyController 加 `unregister` / deinit cleanup —— 跟 app 同生命周期, app 退 OS 回收 Carbon handler / hotkey ref, 不需要单独清理逻辑。
