@@ -785,3 +785,33 @@ status panel: (1018, 6) 22x22  ← 菜单栏还在
 - (新) 不要在 LSUIElement=false 后**再**显式调 `setActivationPolicy(.regular)` — 改 Info.plist 已经让 app 启动是 .regular, 显式再调一次会触发 macOS 26 那个 "NSStatusItem 被路由到 Control Center scene" 的 bug (虽然我们用 NSPanel 不受影响, 但保持代码干净)。
 - (新) 不要为了让 dock icon 在 macOS 26 上"看起来更紧凑" 写自定义 NSDockTile hook — `LSUIElement=false` 已经够用, NSDockTile 是 menu bar app 跟 sandbox 互动时容易踩坑。
 - (更新) ~~不要把 `LSUIElement` 改成 `false`~~ → 改成 `false` 现在是允许的 (用户明确要求 dock icon), 见 §27 详细说明。
+## 29. Xcode 26 entitlements "modified during build" 修复
+
+**症状** (用户报告): Xcode GUI build 报
+> Entitlements file "MissingPlusPlus.entitlements" was modified during the build, which is not supported. You can disable this error by setting 'CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION' to 'YES'
+
+Xcode 26 在 Debug build 时自动往 entitlements 注入 `get-task-allow=true`
+(允许调试器 attach), 写完的 `.app.xcent` 跟 source 出现 mtime 差就报错。
+CLI 加 `CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES` 能绕过, 但每次
+build 都要设, GUI build 还是挂。
+
+**修法** (2 个文件):
+1. `MissingPlusPlus.xcodeproj/project.pbxproj` Debug + Release 两个 build
+   configuration 都加 `CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES`,
+   永久生效, GUI/CLI 都不再报错。
+2. `MissingPlusPlus.entitlements` source 加 `com.apple.security.get-task-allow=true`
+   (带注释解释), 让 Xcode 26 看到 source 已经有这个 key 就跳过 inject,
+   减少不必要 modify 触发。
+
+**Release 影响**: `get-task-allow=true` 在 Release 也会被编进 .app,
+允许 lldb attach production binary。生产不会分发调试器, 实际影响
+极小, 比 build 挂掉强。如果以后需要严格 Release 不带这个 key, 改成
+project.pbxproj 里只给 Debug 加 `CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION`,
+Release 删掉, 同时把 source 的 get-task-allow 也删。
+
+**验证**: `xcodebuild ... build` 不再带 env var 也 `** BUILD SUCCEEDED **`。
+
+**「不要做」(这一轮新加)**:
+- 不要在 pbxproj 里**只**加 `CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION` 不加 source `get-task-allow` — Xcode 26 还是会试图 inject, 然后 mtime 跟 source 冲突, 报错依旧。两条都得加。
+- 不要在每次 build 之前手动 `defaults write com.apple.dt.Xcode ...` 设 environment — GUI build 不读 env, 必须改 pbxproj 才能彻底解决。
+- 不要 `chmod -R` 改 entitlements 文件权限试图"解锁" Xcode — Xcode 不看 POSIX 权限, 看的是它在 build system 里的 internal state。

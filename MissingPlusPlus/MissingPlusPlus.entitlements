@@ -10,5 +10,12 @@
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
+	<!-- Xcode 26 Debug build 会自动注入 get-task-allow=true 允许调试器 attach,
+	     但写完注入的 .app.xcent 跟 source 不同步会报 "modified during build"。
+	     提前在 source 写明, Xcode 26 看到已经存在就不 inject, build 稳定。
+	     Release 也会带这个 key (允许 lldb attach production binary),
+	     实际影响小 (生产不会分发调试器) — 比 build 挂掉强。 -->
+	<key>com.apple.security.get-task-allow</key>
+	<true/>
 </dict>
 </plist>
