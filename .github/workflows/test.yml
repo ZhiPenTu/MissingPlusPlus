@@ -1,0 +1,65 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 同一个 PR 不并发跑, 节省 macOS runner quota
+concurrency:
+  group: missingpp-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build (Debug) + Run Tests
+    runs-on: macos-14  # macOS 14 + Xcode 15.4, 跟工程 13.5 deployment target 兼容
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+        # macos-14 runner 自带 Xcode 15.4, 工程 deployment target 13.5 完全兼容
+        # 用具体版本避免 macos-latest 默认 Xcode 变化导致 build 飘
+
+      - name: Cache DerivedData
+        uses: actions/cache@v4
+        with:
+          path: build/DerivedData
+          key: deriveddata-${{ runner.os }}-${{ hashFiles('MissingPlusPlus.xcodeproj/project.pbxproj') }}
+          # pbxproj 改了 (新增文件 / 改 build setting) 缓存失效
+          # 缓存命中能省 1-2 分钟
+          restore-keys: |
+            deriveddata-${{ runner.os }}-
+
+      - name: Build (Debug)
+        run: |
+          set -euo pipefail
+          ./scripts/build_and_run.sh --help >/dev/null  # 验脚本存在 + 可执行
+          # build_and_run.sh default 会 launch .app, CI 不要 launch
+          # 改用 xcodebuild build-for-testing 直接 build + 跑 tests
+          xcodebuild \
+            -project MissingPlusPlus.xcodeproj \
+            -scheme MissingPlusPlus \
+            -configuration Debug \
+            -derivedDataPath build/DerivedData \
+            -destination 'platform=macOS' \
+            build-for-testing
+
+      - name: Run Tests
+        run: ./scripts/run_tests.sh
+        # run_tests.sh 输出末尾 30 行 (build result + test summary),
+        # 失败时 tail 末尾 60 行重新打
+        # workflow 日志直接可读, 不需要下载 xcresult artifact
+
+      - name: On failure, upload xcresult
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: build/DerivedData/Logs/Test/*.xcresult
+          # 失败时把 xcresult 上传, 本地能用 xcodebuild -resultBundlePath 看 detail
+          if-no-files-found: ignore
