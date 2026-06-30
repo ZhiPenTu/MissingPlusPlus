@@ -77,7 +77,7 @@ AI 帮你写一封"想对 TA 说、但不会发出去"的信。
 
 ## 下载 / 安装
 
-Release DMG 在 [dist/MissingPlusPlus-1.0.dmg](dist/)。双击挂载，把 `心安日记.app` 拖进 Applications 文件夹。
+Release DMG 在 [https://github.com/ZhiPenTu/MissingPlusPlus/releases](https://github.com/ZhiPenTu/MissingPlusPlus/releases)。双击挂载，把 `心安日记.app` 拖进 Applications 文件夹。
 
 首次启动 macOS 可能提示"无法打开，因为它来自身份不明的开发者" — 系统设置 → 隐私与安全性 → 仍要打开。
 
