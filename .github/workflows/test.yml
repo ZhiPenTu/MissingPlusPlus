@@ -1,14 +1,20 @@
 name: Build & Test
 
+# CI 触发策略 (Phase 15 改):
+# - pull_request on main: PR open + sync + close/merge 都跑
+#   (PR 合并 = 触发 close event, 顺带跑一次验证合并后 main 仍 build 通过)
+# - 不再 watch push: branches: [main]
+#   之前 push 直接到 main 也跑, 现在只在 PR 合并后跑 (走 PR close event)
+#   (用户偏好: '将代码合并到 main 之后才触发', 不在 direct push 时跑)
+# - tag push 走 release.yml (出 DMG), 不受 test.yml 影响
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, closed]
 
-# 同一个 PR 不并发跑, 节省 macOS runner quota
+# PR / commit hash 唯一, 同一 PR 不并发跑, 节省 macOS runner quota
 concurrency:
-  group: missingpp-${{ github.ref }}
+  group: missingpp-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
