@@ -76,7 +76,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             onOpenMain: { [weak self] in
                 self?.windowController.showMainWindow()
-            }
+            },
+            // 真正的 check 走 MenuActionRouter.checkForUpdatesFromMenu (它有 sender 可改 item 状态),
+            // AppDelegate 这里只是 plumbing。Task 12 会在 .didFindRemoteUpdate 监听里把主窗口
+            // 拉前 + 二次派发 .showUpdateBanner 给 MenuBarContent。
+            onCheckForUpdates: {}
         )
         // ⌥M 全局热键 — Carbon EventHotKey 走 HotKeyController
         hotKeyController = HotKeyController(
