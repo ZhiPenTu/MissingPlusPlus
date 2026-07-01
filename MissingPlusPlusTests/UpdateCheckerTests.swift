@@ -49,4 +49,28 @@ final class UpdateCheckerTests: XCTestCase {
         let r2: UpdateCheckResult = .upToDate(localVersion: "0.0.1")
         XCTAssertEqual(r1, r2)
     }
+
+    // MARK: - compareSemver
+
+    func test_semverRemoteGreater() {
+        XCTAssertGreaterThan(UpdateChecker.compareSemver(remote: "0.0.2", local: "0.0.1"), 0)
+    }
+
+    func test_semverEqual() {
+        XCTAssertEqual(UpdateChecker.compareSemver(remote: "0.0.1", local: "0.0.1"), 0)
+    }
+
+    func test_semverRemoteLesser() {
+        XCTAssertLessThan(UpdateChecker.compareSemver(remote: "0.0.1", local: "0.0.2"), 0)
+    }
+
+    func test_semverMajorJump() {
+        // 1.0.0 > 0.99.99 (a known sharp edge in naive string compare)
+        XCTAssertGreaterThan(UpdateChecker.compareSemver(remote: "1.0.0", local: "0.99.99"), 0)
+    }
+
+    func test_semverHandlesMissingSegments() {
+        // "0.1" should equal "0.1.0" (missing trailing segment treated as 0)
+        XCTAssertEqual(UpdateChecker.compareSemver(remote: "0.1", local: "0.1.0"), 0)
+    }
 }

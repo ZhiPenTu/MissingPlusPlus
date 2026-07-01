@@ -55,5 +55,20 @@ final class UpdateChecker {
         self.githubURL = githubURL
     }
 
-    // (performCheck / checkNow / startBackgroundCheck added in Tasks 4-7)
+        // (performCheck / checkNow / startBackgroundCheck added in Tasks 4-7)
+
+    /// Compare two semver strings segment-by-segment. Missing trailing segments
+    /// are treated as 0 (so "0.1" == "0.1.0"). Non-integer segments → 0.
+    /// - Returns: > 0 if remote > local; < 0 if remote < local; 0 if equal.
+    static func compareSemver(remote: String, local: String) -> Int {
+        let r = remote.split(separator: ".").compactMap { Int($0) }
+        let l = local.split(separator: ".").compactMap { Int($0) }
+        let len = max(r.count, l.count)
+        for i in 0..<len {
+            let rv = i < r.count ? r[i] : 0
+            let lv = i < l.count ? l[i] : 0
+            if rv != lv { return rv - lv }
+        }
+        return 0
+    }
 }
