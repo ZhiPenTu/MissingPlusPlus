@@ -104,6 +104,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .missingStoreDidAdd,
             object: nil
         )
+
+        // v0.0.2 update-checker: 启动 5s 后静默检查 + 订阅 .didFindRemoteUpdate
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            UpdateChecker.shared.startBackgroundCheck()
+        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleRemoteUpdateFound(_:)),
+            name: .didFindRemoteUpdate,
+            object: nil
+        )
     }
 
     // MARK: - Dock 点击
@@ -128,5 +139,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 状态栏图标 mood 联动: StatusPanelController 自己订阅 .missingStoreDidAdd
         // 系统通知走 NotificationService, AppDelegate 不再自己持 UN 代码
         NotificationService.shared.postRecordNotification(for: missing)
+    }
+
+    // MARK: - 更新检测
+
+    @objc private func handleRemoteUpdateFound(_ note: Notification) {
+        guard let version = note.userInfo?["version"] as? String,
+              let url = note.userInfo?["url"] as? URL else { return }
+        // 1. 拉主窗口到前
+        windowController.showMainWindow()
+        // 2. 二级派发,让 MenuBarContent 挂 banner
+        NotificationCenter.default.post(
+            name: .showUpdateBanner,
+            object: nil,
+            userInfo: ["version": version, "url": url]
+        )
     }
 }
