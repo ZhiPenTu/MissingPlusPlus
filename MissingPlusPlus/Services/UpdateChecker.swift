@@ -84,7 +84,8 @@ final class UpdateChecker {
                 return .failed(reason: "GitHub 返回 HTTP \(code)")
             }
 
-            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+            // try? 让 JSON parse 错转 nil,走我们的 fallback 文案而不是 NSError 描述
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let tagName = json["tag_name"] as? String,
                   let htmlURLString = json["html_url"] as? String,
                   let htmlURL = URL(string: htmlURLString) else {

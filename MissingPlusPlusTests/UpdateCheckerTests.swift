@@ -113,4 +113,48 @@ final class UpdateCheckerTests: XCTestCase {
         let json: [String: Any] = ["tag_name": tag, "html_url": url]
         mockSession.stubbedData = try! JSONSerialization.data(withJSONObject: json)
     }
+
+    // MARK: - performCheck edge cases
+
+    func test_performCheck_prereleaseTreatedAsUpToDate() async {
+        // 9.9.9-alpha would be newer than 0.0.1, but '-alpha' marks it prerelease
+        // — we skip prereleases so user doesn't get false positive.
+        stubGitHub(tag: "v9.9.9-alpha", url: "https://x")
+        let result = await makeChecker().checkNow()
+        if case .upToDate = result {
+            // pass
+        } else {
+            XCTFail("prerelease should be .upToDate, got \(result)")
+        }
+    }
+
+    func test_performCheck_httpError() async {
+        mockSession.stubbedData = Data()
+        mockSession.stubbedResponse = HTTPURLResponse(
+            url: URL(string: "https://api.github.com/x")!,
+            statusCode: 403, httpVersion: "HTTP/1.1", headerFields: nil
+        )!
+        let result = await makeChecker().checkNow()
+        XCTAssertEqual(result, .failed(reason: "GitHub 返回 HTTP 403"))
+    }
+
+    func test_performCheck_networkFailure() async {
+        mockSession.stubbedError = URLError(.notConnectedToInternet)
+        let result = await makeChecker().checkNow()
+        if case .failed = result {
+            // pass — exact reason comes from URLError.localizedDescription
+        } else {
+            XCTFail("network error should be .failed, got \(result)")
+        }
+    }
+
+    func test_performCheck_malformedJSON() async {
+        mockSession.stubbedData = "not json".data(using: .utf8)!
+        mockSession.stubbedResponse = HTTPURLResponse(
+            url: URL(string: "https://api.github.com/x")!,
+            statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil
+        )!
+        let result = await makeChecker().checkNow()
+        XCTAssertEqual(result, .failed(reason: "响应格式不符"))
+    }
 }
