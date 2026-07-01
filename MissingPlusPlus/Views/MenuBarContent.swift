@@ -16,6 +16,8 @@ enum PopoverTab: String, CaseIterable, Identifiable {
 struct MenuBarContent: View {
     @ObservedObject var store: MissingStore
     @State private var tab: PopoverTab = .newEntry
+    @State private var updateBanner: (version: String, url: URL)?
+    @State private var bannerVisible: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,6 +56,16 @@ struct MenuBarContent: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(width: 360, height: 720)
+        .onReceive(NotificationCenter.default.publisher(for: .showUpdateBanner)) { note in
+            guard let version = note.userInfo?["version"] as? String,
+                  let url = note.userInfo?["url"] as? URL else { return }
+            // 同版本已 dismiss 过 → 不重弹
+            if AppPreferences.shared.lastDismissedVersion == version { return }
+            withAnimation {
+                updateBanner = (version, url)
+                bannerVisible = true
+            }
+        }
     }
 
     private var tabBar: some View {
