@@ -109,8 +109,9 @@ struct SettingsView: View {
                 Button("立即检查") {
                     isCheckingUpdate = true
                     Task { @MainActor in
-                        _ = await UpdateChecker.shared.checkNow()
+                        let result = await UpdateChecker.shared.checkNow()
                         isCheckingUpdate = false
+                        presentCheckResult(result)
                     }
                 }
                 .disabled(isCheckingUpdate)
@@ -231,6 +232,35 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundColor(.red)
                 .lineLimit(2)
+        }
+    }
+
+    /// 立即检查的 NSAlert 反馈 — upToDate / updateAvailable / failed 各分支
+    private func presentCheckResult(_ result: UpdateCheckResult) {
+        switch result {
+        case .upToDate(let local):
+            let alert = NSAlert()
+            alert.messageText = "已是最新"
+            alert.informativeText = "当前 v\(local) 已是最新版本。"
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "好")
+            alert.runModal()
+        case .updateAvailable(let version, _):
+            // 用状态栏 "Check for Updates…" 走完整流程 (open URL + dismiss),
+            // 这里只 NSAlert 提示一下,UI 跟状态栏 item 一致
+            let alert = NSAlert()
+            alert.messageText = "新版本 v\(version) 可用"
+            alert.informativeText = "用状态栏菜单的 'Check for Updates…' 跳到 release 页查看。"
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "好")
+            alert.runModal()
+        case .failed(let reason):
+            let alert = NSAlert()
+            alert.messageText = "检查更新失败"
+            alert.informativeText = reason
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "好")
+            alert.runModal()
         }
     }
 

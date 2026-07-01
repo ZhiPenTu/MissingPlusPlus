@@ -149,10 +149,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 1. 拉主窗口到前
         windowController.showMainWindow()
         // 2. 二级派发,让 MenuBarContent 挂 banner
-        NotificationCenter.default.post(
-            name: .showUpdateBanner,
-            object: nil,
-            userInfo: ["version": version, "url": url]
-        )
+        // ⚠️ race condition fix: 必须在下一个 runloop tick 才能 post
+        // showMainWindow() 同步创建 NSWindow + NSHostingController,但 SwiftUI body
+        // 还没求值 → MenuBarContent 的 .onReceive 没注册 → 通知丢失。
+        // async 把 post 推到下一个 runloop,给 SwiftUI 时间设置订阅。
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .showUpdateBanner,
+                object: nil,
+                userInfo: ["version": version, "url": url]
+            )
+        }
     }
 }
