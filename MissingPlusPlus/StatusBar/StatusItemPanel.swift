@@ -1,25 +1,25 @@
 import AppKit
 
-// MARK: - Floating Status Panel
+// MARK: - Floating Status Panel (macOS 26+ fallback)
 //
-// macOS 26 上 NSStatusItem 默认进 Control Center 弹窗辅助区, 屏幕顶部
-// 菜单栏看不到 — 不管 .regular / .accessory / autosaveName / Visible Item-N
-// 怎么设都不行。绕开 NSStatusItem 路线, 直接用 NSPanel 在屏幕顶部右侧画
-// 一个浮动 button: level = .statusBar (盖在 system status bar 之上)、
-// nonactivatingPanel (不抢焦点)、canJoinAllSpaces (全屏也能看到)。
+// macOS 26 把 NSStatusItem 路由到 `com.apple.controlcenter:...-Aux[1]-NSStatusItemView`
+// scene, 主菜单栏看不到 (log 多次确认: 即使 .regular / .accessory / 沙盒 on/off 都是
+// 同样 routing; 其他 app (cmux / cc-switch) work, 但本 app 在这台机器上必然 routing)。
 //
-// 渲染走 MenuBarIconRenderer (heart / emoji / 思字 三种 style + 5 mood 染色),
-// mood 联动通过重新 setIcon 实现。
-
-/// `StatusItemPanel` 的内容 view, 18x18 NSImageView 装 icon。
-/// 自己处理 mouseDown / mouseDragged / mouseUp 区分 click vs drag,
-/// drag 结束通过 `onDragEnd` 回调通知 AppDelegate 持久化 x 坐标。
+// `NSPanelStatusItemProvider` 在 macOS 26+ 用这个, 绕开 routing 直接在状态栏画一个
+// 22x22 浮动 button。`level = .statusBar` 盖在 system status bar 之上,
+// `nonactivatingPanel` 不抢焦点, `canJoinAllSpaces` 全屏能看到。
+//
+// 渲染走 MenuBarIconRenderer (heart / emoji / 思字 × 5 mood 染色)。
+//
+// **macOS < 26 不走这条**, 走官方 NSStatusItem (AppKit 接管 click / drag /
+// ⌘-drag 重排 / accessibility / dark mode)。
 final class StatusItemView: NSView {
     weak var clickTarget: AnyObject?
     var clickSelector: Selector?
     private let imageView = NSImageView()
     private var dragStartLocation: NSPoint = .zero
-    /// 拖动结束回调 — AppDelegate 那边把 panel.frame.origin.x 写进 UserDefaults
+    /// 拖动结束回调 — provider 把 panel.frame.origin.x 写进 UserDefaults
     var onDragEnd: (() -> Void)?
     /// 拖动超过这个距离才算 drag, 避免跟 click 冲突
     private let dragThreshold: CGFloat = 4
@@ -45,7 +45,6 @@ final class StatusItemView: NSView {
     override func mouseDragged(with event: NSEvent) {
         guard let window = self.window else { return }
         let current = event.locationInWindow
-        // 只在超过 threshold 时才算 drag, 避免 click 误触
         if abs(current.x - dragStartLocation.x) < dragThreshold &&
            abs(current.y - dragStartLocation.y) < dragThreshold {
             return
@@ -62,7 +61,6 @@ final class StatusItemView: NSView {
         let moved = abs(event.locationInWindow.x - dragStartLocation.x) +
                     abs(event.locationInWindow.y - dragStartLocation.y)
         if moved < dragThreshold {
-            // 没拖 — 当 click 处理
             if let target = clickTarget, let sel = clickSelector {
                 _ = target.perform(sel, with: self)
             }
@@ -72,10 +70,6 @@ final class StatusItemView: NSView {
     }
 }
 
-/// 22x22 浮动 panel, 装 StatusItemView (内嵌 18x18 icon view)。
-/// `level = .statusBar` 让它盖在 system status bar 之上 (跟状态栏 app icon 同层级)。
-/// `nonactivatingPanel` 不抢 app 焦点, 点完不卡主窗口。
-/// `canJoinAllSpaces + fullScreenAuxiliary` 让全屏 app 时也能看到。
 final class StatusItemPanel: NSPanel {
     let content: StatusItemView
 

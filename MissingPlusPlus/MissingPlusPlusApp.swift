@@ -62,12 +62,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // LSUIElement=false (Info.plist): app 启动是 .regular policy, 有
-        // Dock icon + 完整 menu bar + 标准 app menu。**不要**调
-        // setActivationPolicy(.regular) — macOS 26 上把 NSStatusItem
-        // 路由到 Control Center scene, 但我们用的是 NSPanel
-        // (`StatusItemPanel`), 不受这个 routing 影响, 所以可以放心
-        // 显示 dock icon 同时保留菜单栏 panel。
-        // Status panel 走 StatusPanelController — init 内部订阅 prefs / 屏幕参数
+        // Dock icon + 完整 menu bar + 标准 app menu。**不要**再显式调
+        // setActivationPolicy(.regular) — 多余的重复设置在 macOS 26 上
+        // 会触发 NSStatusItem 被路由到 Control Center scene 的 bug, 让
+        // 状态栏 icon 看不到。Info.plist 已经声明 .regular, AppKit
+        // 启动时直接按这个走就行。
+        // Status item 走 StatusPanelController (NSStatusItem 路线) — init 内部订阅 prefs / missingStore
         statusPanelController = StatusPanelController(
             onRecord: { mood, who, intensity in
                 // 写入 store → post .missingStoreDidAdd → handleMissingAdded

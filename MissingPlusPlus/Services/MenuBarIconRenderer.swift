@@ -7,10 +7,12 @@ import AppKit
 /// `image` / `title` / `attributedTitle` / `contentTintColor` before the
 /// style-specific code runs.
 ///
-/// C 方案 (macOS 26) 改用 SwiftUI `MenuBarExtra` 后，`apply(to:button:)` 不再
-/// 被调用（NSStatusItem 整条链都拆了），新接口是 `image(mood:style:) ->
-/// NSImage` — 纯函数返回渲染好的 image，给 SwiftUI label 用。三个 style
-/// 分支内部都用 lockFocus + 画图/文字，输出一致。
+/// 现状：macOS 13-15 走官方 NSStatusItem (`StatusItemProvider` 协议里的
+/// `NSStatusItemProvider`)，macOS 26+ 走 NSPanel fallback
+/// (`NSPanelStatusItemProvider` — 绕过 Apple 把 NSStatusItem 路由到
+/// Control Center scene 的 bug)。两套实现都通过 `image(mood:style:) ->
+/// NSImage` 拿渲染好的图，不需要碰 NSImage 操作细节。三个 style 分支
+/// 内部都用 lockFocus + 画图/文字，输出一致。
 @MainActor
 enum MenuBarIconRenderer {
     /// 18x18pt — system status bar item 实际 icon 渲染区域
