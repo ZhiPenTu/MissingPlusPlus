@@ -15,6 +15,7 @@ struct RealityCheckSheet: View {
     // v1.x self-soothing: 3 个 sub-button 触发对应 sub-sheet
     @State private var pendingGrounding = false
     @State private var pendingCompassion: Missing?
+    @State private var pendingWorthAffirmation = false
     @State private var pendingCooldown = false
 
     var body: some View {
@@ -58,8 +59,9 @@ struct RealityCheckSheet: View {
                 .disabled(canSave == false)
             }
 
-            // v1.x self-soothing: 3 icon-only sub-button (hover tooltip 显示 label)
-            HStack(spacing: 8) {
+            // v1.x self-soothing: 4 icon-only sub-button (hover tooltip 显示 label)
+            // v1.x worth-affirmation bundle: 4th 是绿色心形(向内求)
+            HStack(spacing: 6) {
                 Text("想先做点别的？")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -83,6 +85,15 @@ struct RealityCheckSheet: View {
                 .foregroundColor(.pink)
                 .help("自我同情")
                 Button {
+                    pendingWorthAffirmation = true
+                } label: {
+                    Image(systemName: "heart.circle.fill")
+                        .font(.callout)
+                }
+                .buttonStyle(.borderless)
+                .foregroundColor(.green)
+                .help("自己值得被爱")
+                Button {
                     pendingCooldown = true
                 } label: {
                     Image(systemName: "shuffle")
@@ -98,6 +109,7 @@ struct RealityCheckSheet: View {
         .frame(width: 420)
         .sheet(isPresented: $pendingGrounding) { GroundingSheet() }
         .sheet(item: $pendingCompassion) { _ in SelfCompassionView(missing: missing) }
+        .sheet(isPresented: $pendingWorthAffirmation) { WorthAffirmationView() }
         .sheet(isPresented: $pendingCooldown) { CooldownSheet(prefs: AppPreferences.shared) }
     }
 

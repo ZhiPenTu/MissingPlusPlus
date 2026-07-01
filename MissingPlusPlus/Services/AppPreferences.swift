@@ -55,6 +55,19 @@ final class AppPreferences: ObservableObject {
             defaults.set(notificationIncludeTriggers, forKey: Keys.notificationIncludeTriggers)
         }
     }
+    /// v0.0.2 update-checker: 启动 5s 后静默检查 GitHub Releases;有新版在主窗口顶部
+    /// 弹 banner。默认开。关闭后连手动 "Check for Updates…" 也禁用。
+    @Published var updateCheckEnabled: Bool {
+        didSet { defaults.set(updateCheckEnabled, forKey: Keys.updateCheckEnabled) }
+    }
+    /// v0.0.2 update-checker: 启动检查节流用。transient, 不持久化。
+    @Published var lastCheckedAt: Date?
+    /// v0.0.2 update-checker: 上次发现的 remote version (debug/UI 用)。transient, 不持久化。
+    @Published var lastKnownRemoteVersion: String?
+    /// v0.0.2 update-checker: 用户点过 "稍后" 的版本。持久化,避免每次启动都重弹同一版本。
+    @Published var lastDismissedVersion: String? {
+        didSet { defaults.set(lastDismissedVersion, forKey: Keys.lastDismissedVersion) }
+    }
     /// v1.x self-soothing bundle: 用户追加的 cooldown 活动。
     /// 预定义 6 条在 `CooldownActivities.defaults`，永远在前面；
     /// 这个数组只存用户追加的，渲染时 `CooldownActivities.all(custom:)` 拼接。
@@ -62,6 +75,15 @@ final class AppPreferences: ObservableObject {
     @Published var cooldownActivities: [String] {
         didSet {
             defaults.set(cooldownActivities, forKey: Keys.cooldownActivities)
+        }
+    }
+
+    /// v1.x worth-affirmation bundle: 用户每次点「我已确认」的 timestamp。
+    /// append-only(删 = 失去一次确认历史,不允许)。
+    /// Statistics tab 自己 filter "本月" / "累计"。
+    @Published var worthConfirmations: [Date] {
+        didSet {
+            defaults.set(worthConfirmations, forKey: Keys.worthConfirmations)
         }
     }
 
@@ -104,7 +126,7 @@ final class AppPreferences: ObservableObject {
     /// API key 不存在 UserDefaults，单独走 Keychain。account 名固定。
     static let aiKeychainAccount = "openai"
 
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
     private enum Keys {
         static let aiEnabled = "AIEnabled"
         static let aiBaseURL = "AIBaseURL"
@@ -119,8 +141,12 @@ final class AppPreferences: ObservableObject {
         static let autoPromptResolveLast = "AutoPromptResolveLast"
         static let notificationIncludeTriggers = "NotificationIncludeTriggers"
         static let cooldownActivities = "CooldownActivities"
+        static let worthConfirmations = "WorthConfirmations"
+        static let updateCheckEnabled = "UpdateCheckEnabled"
+        static let lastDismissedVersion = "UpdateCheckerLastDismissedVersion"
     }
-    private init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         self.showStatusItem = defaults.object(forKey: Keys.showStatusItem) as? Bool ?? true
         self.menuBarIconStyle = MenuBarIconStyle(
             rawValue: defaults.string(forKey: Keys.menuBarIconStyle) ?? "heart"
@@ -134,6 +160,8 @@ final class AppPreferences: ObservableObject {
             defaults.object(forKey: Keys.notificationIncludeTriggers) as? Bool ?? true
         self.cooldownActivities =
             defaults.stringArray(forKey: Keys.cooldownActivities) ?? []
+        self.worthConfirmations =
+            defaults.array(forKey: Keys.worthConfirmations) as? [Date] ?? []
         self.aiEnabled =
             defaults.object(forKey: Keys.aiEnabled) as? Bool ?? false
         self.aiBaseURL =
@@ -143,6 +171,12 @@ final class AppPreferences: ObservableObject {
         self.aiTemperature = defaults.object(forKey: Keys.aiTemperature) as? Double ?? 0.85
         self.aiMaxTokens = defaults.object(forKey: Keys.aiMaxTokens) as? Int ?? 200
         self.aiRequestTimeout = defaults.object(forKey: Keys.aiRequestTimeout) as? Double ?? 2.0
+        self.updateCheckEnabled =
+            defaults.object(forKey: Keys.updateCheckEnabled) as? Bool ?? true
+        self.lastCheckedAt = nil  // transient
+        self.lastKnownRemoteVersion = nil  // transient
+        self.lastDismissedVersion =
+            defaults.string(forKey: Keys.lastDismissedVersion)
     }
 
     // MARK: - API key (Keychain)

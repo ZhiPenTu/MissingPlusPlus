@@ -215,6 +215,18 @@ struct StatisticsView: View {
         return (Double(completed) / Double(eligible), completed, eligible)
     }
 
+    /// v1.x worth-affirmation bundle: 卡片 4 — 本月向内求次数。
+    /// 累计 = prefs.worthConfirmations.count;本月 = filter month。
+    private var worthStats: (thisMonth: Int, total: Int) {
+        let cal = Calendar.current
+        let now = Date()
+        let all = AppPreferences.shared.worthConfirmations
+        let thisMonth = all.filter {
+            cal.isDate($0, equalTo: now, toGranularity: .month)
+        }.count
+        return (thisMonth, all.count)
+    }
+
     // MARK: - chart data
 
     private struct DailyBucket: Identifiable {
@@ -264,6 +276,7 @@ struct StatisticsView: View {
             WaveResolvedCard(stats: waveStats)
             TopTriggersCard(triggers: topTriggers)
             RealityCheckCard(stats: realityCheckStats)
+            WorthAffirmationCard(stats: worthStats)
         }
         .padding(.bottom, 4)
     }
@@ -389,5 +402,44 @@ enum MoodColor {
         case .sad:       return Color(red: 0.36, green: 0.48, blue: 0.60)   // #5B7A99
         case .longing:   return Color(red: 0.61, green: 0.45, blue: 0.81)   // #9B72CF
         }
+    }
+}
+
+/// 卡片 4: 本月你向内求 — 累计 + 本月数。
+/// 跟其它 insight 卡片同 pattern: 1 个大数字 + 1 段温柔副标题,
+/// 不做 streak / 目标 / 提醒(向内求是 in-control 动作,不是 task 进度)。
+private struct WorthAffirmationCard: View {
+    let stats: (thisMonth: Int, total: Int)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("本月你向内求")
+                .font(.subheadline.weight(.medium))
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(stats.thisMonth)")
+                    .font(.system(size: 36, weight: .semibold, design: .rounded))
+                    .foregroundColor(.green)
+                Text("次")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Text(subtitle)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.green.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var subtitle: String {
+        if stats.total == 0 {
+            return "还没有确认过 · 点 HistoryList 卡片底部的心形图标试试"
+        }
+        if stats.thisMonth == 0 {
+            return "累计 \(stats.total) 次 · 还没有这个月"
+        }
+        return "每一次都是一次「我值得」练习 · 累计 \(stats.total) 次"
     }
 }
