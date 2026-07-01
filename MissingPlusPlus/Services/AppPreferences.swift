@@ -113,7 +113,7 @@ final class AppPreferences: ObservableObject {
     /// API key 不存在 UserDefaults，单独走 Keychain。account 名固定。
     static let aiKeychainAccount = "openai"
 
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
     private enum Keys {
         static let aiEnabled = "AIEnabled"
         static let aiBaseURL = "AIBaseURL"
@@ -130,7 +130,8 @@ final class AppPreferences: ObservableObject {
         static let cooldownActivities = "CooldownActivities"
         static let worthConfirmations = "WorthConfirmations"
     }
-    private init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         self.showStatusItem = defaults.object(forKey: Keys.showStatusItem) as? Bool ?? true
         self.menuBarIconStyle = MenuBarIconStyle(
             rawValue: defaults.string(forKey: Keys.menuBarIconStyle) ?? "heart"
