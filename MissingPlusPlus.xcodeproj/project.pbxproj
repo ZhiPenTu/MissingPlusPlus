@@ -40,6 +40,7 @@
 		A1000012000000000000A007 /* CooldownSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A007 /* CooldownSheet.swift */; };
 		A1000012000000000000A008 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A008 /* KeychainService.swift */; };
 		A1000012000000000000A009 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A009 /* AIService.swift */; };
+		A100001E000000000000A001 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001E000000000000A001 /* UpdateChecker.swift */; };
 		A1000012000000000000A00A /* LetterToThemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00A /* LetterToThemView.swift */; };
 		A1000012000000000000A00C /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00C /* WindowController.swift */; };
 		A1000012000000000000A00D /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00D /* MenuBuilder.swift */; };
@@ -56,6 +57,7 @@
 		A1000019000000000000A001 /* StatusPanelControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000019000000000000A001 /* StatusPanelControllerTests.swift */; };
 		A100001A000000000000A001 /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A000000000000A001 /* NotificationServiceTests.swift */; };
 		A100001B000000000000A001 /* HotKeyControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001B000000000000A001 /* HotKeyControllerTests.swift */; };
+		A100001F000000000000A001 /* UpdateCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001F000000000000A001 /* UpdateCheckerTests.swift */; };
 		A1000012000000000000A016 /* WorthAffirmations.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A016 /* WorthAffirmations.swift */; };
 		A1000012000000000000A017 /* WorthAffirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A017 /* WorthAffirmationView.swift */; };
 /* End PBXBuildFile section */
@@ -108,6 +110,7 @@
 		B1000012000000000000A007 /* CooldownSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CooldownSheet.swift; sourceTree = "<group>"; };
 		B1000012000000000000A008 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		B1000012000000000000A009 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
+		B100001E000000000000A001 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		B1000012000000000000A00A /* LetterToThemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterToThemView.swift; sourceTree = "<group>"; };
 		B1000012000000000000A00C /* WindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowController.swift; sourceTree = "<group>"; };
 		B1000012000000000000A015 /* StatusItemPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemPanel.swift; sourceTree = "<group>"; };
@@ -124,6 +127,7 @@
 		B1000019000000000000A001 /* StatusPanelControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPanelControllerTests.swift; sourceTree = "<group>"; };
 		B100001A000000000000A001 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		B100001B000000000000A001 /* HotKeyControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyControllerTests.swift; sourceTree = "<group>"; };
+		B100001F000000000000A001 /* UpdateCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckerTests.swift; sourceTree = "<group>"; };
 		B1000012000000000000A016 /* WorthAffirmations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorthAffirmations.swift; sourceTree = "<group>"; };
 		B1000012000000000000A017 /* WorthAffirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorthAffirmationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -202,6 +206,7 @@
 				B1000012000000000000A001 /* MenuBarIconRenderer.swift */,
 				B1000012000000000000A008 /* KeychainService.swift */,
 				B1000012000000000000A009 /* AIService.swift */,
+				B100001E000000000000A001 /* UpdateChecker.swift */,
 				B1000012000000000000A00E /* NotificationService.swift */,
 				B1000012000000000000A00F /* HotKeyController.swift */,
 				B1000012000000000000A011 /* ActiveStateController.swift */,
@@ -276,6 +281,7 @@
 				B1000019000000000000A001 /* StatusPanelControllerTests.swift */,
 				B100001A000000000000A001 /* NotificationServiceTests.swift */,
 				B100001B000000000000A001 /* HotKeyControllerTests.swift */,
+				B100001F000000000000A001 /* UpdateCheckerTests.swift */,
 			);
 			path = MissingPlusPlusTests;
 			sourceTree = "<group>";
@@ -407,6 +413,7 @@
 				A1000012000000000000A007 /* CooldownSheet.swift in Sources */,
 				A1000012000000000000A008 /* KeychainService.swift in Sources */,
 				A1000012000000000000A009 /* AIService.swift in Sources */,
+				A100001E000000000000A001 /* UpdateChecker.swift in Sources */,
 				A1000012000000000000A00A /* LetterToThemView.swift in Sources */,
 				A1000012000000000000A00C /* WindowController.swift in Sources */,
 				A1000012000000000000A00D /* MenuBuilder.swift in Sources */,
@@ -432,6 +439,7 @@
 				A1000019000000000000A001 /* StatusPanelControllerTests.swift in Sources */,
 				A100001A000000000000A001 /* NotificationServiceTests.swift in Sources */,
 				A100001B000000000000A001 /* HotKeyControllerTests.swift in Sources */,
+				A100001F000000000000A001 /* UpdateCheckerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
