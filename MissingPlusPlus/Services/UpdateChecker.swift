@@ -55,7 +55,66 @@ final class UpdateChecker {
         self.githubURL = githubURL
     }
 
-        // (performCheck / checkNow / startBackgroundCheck added in Tasks 4-7)
+        // MARK: - Public API
+
+    /// Manual check (used by status-bar "Check for Updates…" item and
+    /// Settings "立即检查" button). Bypasses the 6h throttle.
+    func checkNow() async -> UpdateCheckResult {
+        guard prefs.updateCheckEnabled else {
+            return .failed(reason: "已在设置中关闭")
+        }
+        checkLock.lock(); defer { checkLock.unlock() }
+        return await performCheck()
+    }
+
+    // MARK: - Private
+
+    private func performCheck() async -> UpdateCheckResult {
+        prefs.lastCheckedAt = Date()
+
+        do {
+            var request = URLRequest(url: githubURL)
+            request.setValue("MissingPlusPlus/0.0.1 (macOS)", forHTTPHeaderField: "User-Agent")
+            request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+
+            let (data, response) = try await session.data(from: githubURL)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+                NSLog("[MissingPlusPlus] update: GitHub HTTP %d", code)
+                return .failed(reason: "GitHub 返回 HTTP \(code)")
+            }
+
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let tagName = json["tag_name"] as? String,
+                  let htmlURLString = json["html_url"] as? String,
+                  let htmlURL = URL(string: htmlURLString) else {
+                NSLog("[MissingPlusPlus] update: response format unexpected")
+                return .failed(reason: "响应格式不符")
+            }
+
+            // Skip prereleases (e.g. "v0.0.2-alpha")
+            if tagName.contains("-") {
+                return .upToDate(localVersion: currentLocalVersion())
+            }
+
+            let remoteVersion = tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
+            let local = currentLocalVersion()
+
+            if Self.compareSemver(remote: remoteVersion, local: local) > 0 {
+                prefs.lastKnownRemoteVersion = remoteVersion
+                return .updateAvailable(version: remoteVersion, url: htmlURL)
+            } else {
+                return .upToDate(localVersion: local)
+            }
+        } catch {
+            NSLog("[MissingPlusPlus] update: %@", error.localizedDescription)
+            return .failed(reason: error.localizedDescription)
+        }
+    }
+
+    private func currentLocalVersion() -> String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
+    }
 
     /// Compare two semver strings segment-by-segment. Missing trailing segments
     /// are treated as 0 (so "0.1" == "0.1.0"). Non-integer segments → 0.
