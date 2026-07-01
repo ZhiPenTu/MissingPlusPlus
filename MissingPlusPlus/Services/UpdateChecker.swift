@@ -57,6 +57,16 @@ final class UpdateChecker {
 
         // MARK: - Public API
 
+    /// Fire-and-forget background check. Respects the toggle and the 6h throttle.
+    /// Posts `.didFindRemoteUpdate` notification on positive result.
+    func startBackgroundCheck() {
+        guard prefs.updateCheckEnabled else { return }
+        guard shouldCheckNow() else { return }
+        Task { [weak self] in
+            await self?.silentCheck()
+        }
+    }
+
     /// Manual check (used by status-bar "Check for Updates…" item and
     /// Settings "立即检查" button). Bypasses the 6h throttle.
     func checkNow() async -> UpdateCheckResult {
@@ -110,6 +120,23 @@ final class UpdateChecker {
         } catch {
             NSLog("[MissingPlusPlus] update: %@", error.localizedDescription)
             return .failed(reason: error.localizedDescription)
+        }
+    }
+
+    private func shouldCheckNow() -> Bool {
+        guard let last = prefs.lastCheckedAt else { return true }
+        return Date().timeIntervalSince(last) > 6 * 3600
+    }
+
+    private func silentCheck() async {
+        checkLock.lock(); defer { checkLock.unlock() }
+        let result = await performCheck()
+        if case .updateAvailable(let version, let url) = result {
+            NotificationCenter.default.post(
+                name: .didFindRemoteUpdate,
+                object: self,
+                userInfo: ["version": version, "url": url]
+            )
         }
     }
 

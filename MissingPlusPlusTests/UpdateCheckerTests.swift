@@ -157,4 +157,31 @@ final class UpdateCheckerTests: XCTestCase {
         let result = await makeChecker().checkNow()
         XCTAssertEqual(result, .failed(reason: "响应格式不符"))
     }
+
+    // MARK: - startBackgroundCheck throttle + disable
+
+    func test_startBackgroundCheck_respectsDisabled() async {
+        prefs.updateCheckEnabled = false
+        let c = makeChecker()
+        c.startBackgroundCheck()
+        // Give any potential fire-and-forget Task a moment.
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(mockSession.dataCallCount, 0, "should not call network when disabled")
+    }
+
+    func test_startBackgroundCheck_respectsThrottle() async {
+        // lastCheckedAt = now → 6h 内 throttle 生效
+        prefs.lastCheckedAt = Date()
+        let c = makeChecker()
+        c.startBackgroundCheck()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(mockSession.dataCallCount, 0, "should throttle within 6h")
+    }
+
+    func test_checkNow_bypassesThrottle() async {
+        prefs.lastCheckedAt = Date()
+        stubGitHub(tag: "v0.0.1", url: "https://x")
+        _ = await makeChecker().checkNow()
+        XCTAssertEqual(mockSession.dataCallCount, 1, "manual check should bypass throttle")
+    }
 }
