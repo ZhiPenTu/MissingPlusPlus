@@ -22,15 +22,18 @@ final class MenuBuilder {
     /// - Parameters:
     ///   - onRecord: 用户选了 (mood, who, intensity) 组合时调用
     ///   - onOpenMain: 用户选 "在主窗口记录…" 时调用
+    ///   - onCheckForUpdates: 用户选 "Check for Updates…" 时调用
     ///   - onQuit: 用户选 "退出 心安日记" 时调用
     init(
         onRecord: @escaping (Mood, String, Intensity) -> Void,
         onOpenMain: @escaping () -> Void,
+        onCheckForUpdates: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.router = MenuActionRouter(
             onRecord: onRecord,
             onOpenMain: onOpenMain,
+            onCheckForUpdates: onCheckForUpdates,
             onQuit: onQuit
         )
     }
@@ -62,6 +65,16 @@ final class MenuBuilder {
         )
         openMain.target = router
         menu.addItem(openMain)
+
+        menu.addItem(.separator())
+
+        let checkItem = NSMenuItem(
+            title: "Check for Updates…",
+            action: #selector(MenuActionRouter.checkForUpdatesFromMenu(_:)),
+            keyEquivalent: ""
+        )
+        checkItem.target = router
+        menu.addItem(checkItem)
 
         menu.addItem(.separator())
 
@@ -152,15 +165,18 @@ final class MenuBuilder {
 private final class MenuActionRouter: NSObject {
     private let onRecord: (Mood, String, Intensity) -> Void
     private let onOpenMain: () -> Void
+    private let onCheckForUpdates: () -> Void
     private let onQuit: () -> Void
 
     init(
         onRecord: @escaping (Mood, String, Intensity) -> Void,
         onOpenMain: @escaping () -> Void,
+        onCheckForUpdates: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.onRecord = onRecord
         self.onOpenMain = onOpenMain
+        self.onCheckForUpdates = onCheckForUpdates
         self.onQuit = onQuit
     }
 
@@ -173,8 +189,45 @@ private final class MenuActionRouter: NSObject {
         onOpenMain()
     }
 
+    @objc func checkForUpdatesFromMenu(_ sender: NSMenuItem) {
+        // 1. 视觉反馈: item 变 "Checking…", disabled
+        sender.title = "Checking…"
+        sender.isEnabled = false
+        // 2. 异步查
+        Task { @MainActor in
+            let result = await UpdateChecker.shared.checkNow()
+            // 3. 恢复 item
+            sender.title = "Check for Updates…"
+            sender.isEnabled = true
+            // 4. 弹结果
+            Self.presentResult(result)
+        }
+    }
+
     @objc func quitFromMenu(_ sender: NSMenuItem) {
         onQuit()
+    }
+
+    private static func presentResult(_ result: UpdateCheckResult) {
+        switch result {
+        case .upToDate(let local):
+            let alert = NSAlert()
+            alert.messageText = "已是最新"
+            alert.informativeText = "当前 v\(local) 已是最新版本。"
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "好")
+            alert.runModal()
+        case .updateAvailable(_, let url):
+            // 直接打开 release 页;banner 由 .didFindRemoteUpdate 自动挂上
+            NSWorkspace.shared.open(url)
+        case .failed(let reason):
+            let alert = NSAlert()
+            alert.messageText = "检查更新失败"
+            alert.informativeText = reason
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "好")
+            alert.runModal()
+        }
     }
 }
 

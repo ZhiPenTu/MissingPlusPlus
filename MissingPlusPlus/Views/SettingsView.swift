@@ -30,6 +30,7 @@ struct SettingsView: View {
     @State private var apiKey: String = ""
     @State private var isTestingAI: Bool = false
     @State private var aiTestResult: AITestResult? = nil
+    @State private var isCheckingUpdate: Bool = false
 
     enum AITestResult: Equatable {
         case success
@@ -40,6 +41,7 @@ struct SettingsView: View {
         Form {
             storageSection
             menuBarSection
+            updateSection
             attachmentBundleSection
             cooldownSection
             aiSection
@@ -97,6 +99,32 @@ struct SettingsView: View {
     }
 
     // MARK: - 依恋辅助 (v1.x anxious-attachment bundle)
+
+    private var updateSection: some View {
+        Section {
+            Toggle("自动检查更新", isOn: $prefs.updateCheckEnabled)
+            Text("启动 5s 后静默检查 GitHub Releases,有新版时主窗口顶部提示。")
+                .font(.caption).foregroundColor(.secondary)
+            HStack {
+                Button("立即检查") {
+                    isCheckingUpdate = true
+                    Task { @MainActor in
+                        _ = await UpdateChecker.shared.checkNow()
+                        isCheckingUpdate = false
+                    }
+                }
+                .disabled(isCheckingUpdate)
+                if isCheckingUpdate {
+                    ProgressView().controlSize(.small)
+                }
+                if let last = prefs.lastCheckedAt {
+                    Text("上次检查：\(last.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption).foregroundColor(.secondary)
+                }
+                Spacer()
+            }
+        }
+    }
 
     private var attachmentBundleSection: some View {
         Section {

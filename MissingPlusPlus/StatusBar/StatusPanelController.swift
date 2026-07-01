@@ -26,13 +26,16 @@ final class StatusPanelController {
 
     private let onRecord: (Mood, String, Intensity) -> Void
     private let onOpenMain: () -> Void
+    private let onCheckForUpdates: () -> Void
 
     init(
         onRecord: @escaping (Mood, String, Intensity) -> Void,
-        onOpenMain: @escaping () -> Void
+        onOpenMain: @escaping () -> Void,
+        onCheckForUpdates: @escaping () -> Void
     ) {
         self.onRecord = onRecord
         self.onOpenMain = onOpenMain
+        self.onCheckForUpdates = onCheckForUpdates
 
         // 监听 prefs 变化 (showStatusItem 切换时拆/装 panel)
         NotificationCenter.default.addObserver(
@@ -148,6 +151,9 @@ final class StatusPanelController {
             },
             onOpenMain: { [weak self] in
                 self?.onOpenMain()
+            },
+            onCheckForUpdates: { [weak self] in
+                self?.onCheckForUpdates()
             },
             onQuit: {
                 // ⌘Q 已经在 SwiftUI app menu (CommandGroup(.appTermination)) 注册,

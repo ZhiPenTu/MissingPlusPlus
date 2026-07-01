@@ -11,12 +11,13 @@ final class MenuBuilderTests: XCTestCase {
         let builder = MenuBuilder(
             onRecord: { _, _, _ in },
             onOpenMain: {},
+            onCheckForUpdates: {},
             onQuit: {}
         )
         let menu = builder.build(recentWhos: [])
 
-        // 5 mood items + separator + 在主窗口记录 + separator + 退出 = 9
-        XCTAssertEqual(menu.items.count, 9, "Expected 9 top-level items")
+        // 5 mood items + sep + 在主窗口记录 + sep + Check for Updates + sep + 退出 = 11
+        XCTAssertEqual(menu.items.count, 11, "Expected 11 top-level items")
 
         // 5 个 mood item 都是 disabled submenu parent
         for i in 0..<5 {
@@ -24,8 +25,8 @@ final class MenuBuilderTests: XCTestCase {
             XCTAssertNotNil(moodItem.submenu, "Mood item \(i) should have submenu")
         }
 
-        // 退出是最后一个 item
-        let quitItem = menu.items[8]
+        // 退出是最后一个 item (index 10)
+        let quitItem = menu.items[10]
         XCTAssertEqual(quitItem.title, "退出 心安日记")
         XCTAssertEqual(quitItem.keyEquivalent, "q")
     }
@@ -34,6 +35,7 @@ final class MenuBuilderTests: XCTestCase {
         let builder = MenuBuilder(
             onRecord: { _, _, _ in },
             onOpenMain: {},
+            onCheckForUpdates: {},
             onQuit: {}
         )
         let menu = builder.build(recentWhos: [])
@@ -53,6 +55,7 @@ final class MenuBuilderTests: XCTestCase {
         let builder = MenuBuilder(
             onRecord: { _, _, _ in },
             onOpenMain: {},
+            onCheckForUpdates: {},
             onQuit: {}
         )
         let whos = ["苏苏", "妈", "前同事"]
@@ -77,6 +80,7 @@ final class MenuBuilderTests: XCTestCase {
         let builder = MenuBuilder(
             onRecord: { _, _, _ in },
             onOpenMain: {},
+            onCheckForUpdates: {},
             onQuit: {}
         )
         let menu = builder.build(recentWhos: ["苏苏"])
@@ -97,6 +101,7 @@ final class MenuBuilderTests: XCTestCase {
         let builder = MenuBuilder(
             onRecord: { _, _, _ in },
             onOpenMain: {},
+            onCheckForUpdates: {},
             onQuit: {}
         )
         let menu = builder.build(recentWhos: ["苏苏"])
@@ -118,6 +123,7 @@ final class MenuBuilderTests: XCTestCase {
         let builder = MenuBuilder(
             onRecord: { _, _, _ in },
             onOpenMain: {},
+            onCheckForUpdates: {},
             onQuit: {}
         )
         let menu = builder.build(recentWhos: [])
@@ -125,4 +131,29 @@ final class MenuBuilderTests: XCTestCase {
         XCTAssertNotNil(quitItem.action, "Quit should have an @objc action selector")
         XCTAssertNotNil(quitItem.target, "Quit should have a target")
     }
+    // MARK: - Update menu item
+
+    func test_build_includesCheckForUpdatesItem() {
+        var checkTapped = false
+        let builder = MenuBuilder(
+            onRecord: { _, _, _ in },
+            onOpenMain: {},
+            onCheckForUpdates: { checkTapped = true },
+            onQuit: {}
+        )
+        let menu = builder.build(recentWhos: [])
+        let titles = menu.items.map { $0.title }
+        XCTAssertTrue(
+            titles.contains("Check for Updates…"),
+            "menu should include 'Check for Updates…' item, got: \(titles)"
+        )
+        // 验证 target/action 正确 (跟 test_quitItem_hasActionAndTarget 同 pattern;
+        // 不真 perform,因 test env 下 @objc 跨 module dispatch 不可靠)
+        guard let item = menu.items.first(where: { $0.title == "Check for Updates…" }) else {
+            return XCTFail("item not found")
+        }
+        XCTAssertNotNil(item.action, "Check for Updates… should have an @objc action selector")
+        XCTAssertNotNil(item.target, "Check for Updates… should have a target")
+    }
+
 }

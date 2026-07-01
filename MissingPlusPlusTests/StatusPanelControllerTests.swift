@@ -42,7 +42,8 @@ final class StatusPanelControllerTests: XCTestCase {
         AppPreferences.shared.showStatusItem = true
         let controller = StatusPanelController(
             onRecord: { _, _, _ in },
-            onOpenMain: {}
+            onOpenMain: {},
+            onCheckForUpdates: {}
         )
         XCTAssertTrue(hasStatusPanel(), "Should have a visible StatusItemPanel after init")
         _ = controller
@@ -52,7 +53,8 @@ final class StatusPanelControllerTests: XCTestCase {
         AppPreferences.shared.showStatusItem = false
         let controller = StatusPanelController(
             onRecord: { _, _, _ in },
-            onOpenMain: {}
+            onOpenMain: {},
+            onCheckForUpdates: {}
         )
         XCTAssertFalse(hasStatusPanel(), "Should not have a visible StatusItemPanel")
         _ = controller
@@ -64,7 +66,8 @@ final class StatusPanelControllerTests: XCTestCase {
         AppPreferences.shared.showStatusItem = false
         let controller = StatusPanelController(
             onRecord: { _, _, _ in },
-            onOpenMain: {}
+            onOpenMain: {},
+            onCheckForUpdates: {}
         )
         XCTAssertFalse(hasStatusPanel(), "Starting with no panel")
 
@@ -79,7 +82,8 @@ final class StatusPanelControllerTests: XCTestCase {
         AppPreferences.shared.showStatusItem = true
         let controller = StatusPanelController(
             onRecord: { _, _, _ in },
-            onOpenMain: {}
+            onOpenMain: {},
+            onCheckForUpdates: {}
         )
         XCTAssertTrue(hasStatusPanel(), "Starting with panel visible")
 
@@ -96,7 +100,8 @@ final class StatusPanelControllerTests: XCTestCase {
         AppPreferences.shared.showStatusItem = true
         let controller = StatusPanelController(
             onRecord: { _, _, _ in },
-            onOpenMain: {}
+            onOpenMain: {},
+            onCheckForUpdates: {}
         )
 
         // 多次 toggle — 每次 toggle 不会创建/拆多余 panel
