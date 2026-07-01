@@ -65,6 +65,15 @@ final class AppPreferences: ObservableObject {
         }
     }
 
+    /// v1.x worth-affirmation bundle: 用户每次点「我已确认」的 timestamp。
+    /// append-only(删 = 失去一次确认历史,不允许)。
+    /// Statistics tab 自己 filter "本月" / "累计"。
+    @Published var worthConfirmations: [Date] {
+        didSet {
+            defaults.set(worthConfirmations, forKey: Keys.worthConfirmations)
+        }
+    }
+
     /// AI 增强总开关。false → 走现有 hardcoded 文本（SelfCompassion 17 句 / 通知固定模板 / 3 封备选信）。
     @Published var aiEnabled: Bool {
         didSet {
@@ -119,6 +128,7 @@ final class AppPreferences: ObservableObject {
         static let autoPromptResolveLast = "AutoPromptResolveLast"
         static let notificationIncludeTriggers = "NotificationIncludeTriggers"
         static let cooldownActivities = "CooldownActivities"
+        static let worthConfirmations = "WorthConfirmations"
     }
     private init() {
         self.showStatusItem = defaults.object(forKey: Keys.showStatusItem) as? Bool ?? true
@@ -134,6 +144,8 @@ final class AppPreferences: ObservableObject {
             defaults.object(forKey: Keys.notificationIncludeTriggers) as? Bool ?? true
         self.cooldownActivities =
             defaults.stringArray(forKey: Keys.cooldownActivities) ?? []
+        self.worthConfirmations =
+            defaults.array(forKey: Keys.worthConfirmations) as? [Date] ?? []
         self.aiEnabled =
             defaults.object(forKey: Keys.aiEnabled) as? Bool ?? false
         self.aiBaseURL =

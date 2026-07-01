@@ -20,6 +20,7 @@ struct NewMissingForm: View {
     @State private var pendingCompassion: Missing?
     /// 「致 TA 的话」 sheet 触发器。和 pendingCompassion 同样的 pattern。
     @State private var pendingLetter: Missing?
+    @State private var pendingWorthAffirmation: Missing?
     @State private var pendingCooldown = false
     /// 刚提交的那一条 missing,用于让 "想冷静一下" 的 inline link 把 context 传给
     /// SelfCompassionView / LetterToThemView。Submit 时设置,新一条 submit 覆盖。
@@ -80,6 +81,7 @@ struct NewMissingForm: View {
         .sheet(isPresented: $pendingGrounding) { GroundingSheet() }
         .sheet(item: $pendingCompassion) { record in SelfCompassionView(missing: record) }
         .sheet(item: $pendingLetter) { record in LetterToThemView(missing: record) }
+        .sheet(item: $pendingWorthAffirmation) { _ in WorthAffirmationView() }
         .sheet(isPresented: $pendingCooldown) { CooldownSheet(prefs: AppPreferences.shared) }
     }
 
@@ -111,6 +113,15 @@ struct NewMissingForm: View {
                     .buttonStyle(.borderless)
                     .foregroundColor(.pink)
                     .help("自我同情")
+                    Button {
+                        pendingWorthAffirmation = latestSubmitted
+                    } label: {
+                        Image(systemName: "heart.circle.fill")
+                            .font(.callout)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.green)
+                    .help("自己值得被爱")
                     Button {
                         pendingCooldown = true
                     } label: {

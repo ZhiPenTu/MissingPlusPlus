@@ -28,8 +28,8 @@
 		A1000005000000000000A001 /* MissingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000005000000000000A001 /* MissingStore.swift */; };
 		A1000007000000000000A001 /* MenuBarContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000007000000000000A001 /* MenuBarContent.swift */; };
 		A1000008000000000000A001 /* NewMissingForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008000000000000A001 /* NewMissingForm.swift */; };
-		A1000010000000000000A001 /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000010000000000000A001 /* StorageService.swift */; };
 		A1000009000000000000A001 /* HistoryList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000009000000000000A001 /* HistoryList.swift */; };
+		A1000010000000000000A001 /* StorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000010000000000000A001 /* StorageService.swift */; };
 		A1000011000000000000A001 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000011000000000000A001 /* AppPreferences.swift */; };
 		A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A001 /* MenuBarIconRenderer.swift */; };
 		A1000012000000000000A002 /* TriggerTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A002 /* TriggerTag.swift */; };
@@ -38,23 +38,36 @@
 		A1000012000000000000A005 /* GroundingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A005 /* GroundingSheet.swift */; };
 		A1000012000000000000A006 /* SelfCompassionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A006 /* SelfCompassionView.swift */; };
 		A1000012000000000000A007 /* CooldownSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A007 /* CooldownSheet.swift */; };
-		A1000012000000000000A00B /* StatusItemPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00B /* StatusItemPanel.swift */; };
+		A1000012000000000000A008 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A008 /* KeychainService.swift */; };
+		A1000012000000000000A009 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A009 /* AIService.swift */; };
+		A1000012000000000000A00A /* LetterToThemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00A /* LetterToThemView.swift */; };
+		A1000012000000000000A00C /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00C /* WindowController.swift */; };
+		A1000012000000000000A00D /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00D /* MenuBuilder.swift */; };
+		A1000012000000000000A00E /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00E /* NotificationService.swift */; };
+		A1000012000000000000A00F /* HotKeyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00F /* HotKeyController.swift */; };
+		A1000012000000000000A015 /* StatusItemPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A015 /* StatusItemPanel.swift */; };
+		A1000012000000000000A010 /* StatusPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A010 /* StatusPanelController.swift */; };
+		A1000012000000000000A013 /* StatusItemProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A013 /* StatusItemProvider.swift */; };
+		A1000012000000000000A011 /* ActiveStateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A011 /* ActiveStateController.swift */; };
 		A1000013000000000000A001 /* ActiveStateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000013000000000000A001 /* ActiveStateControllerTests.swift */; };
 		A1000014000000000000A001 /* MenuBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000014000000000000A001 /* MenuBuilderTests.swift */; };
 		A1000015000000000000A001 /* WindowControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000015000000000000A001 /* WindowControllerTests.swift */; };
 		A1000019000000000000A001 /* StatusPanelControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000019000000000000A001 /* StatusPanelControllerTests.swift */; };
 		A100001A000000000000A001 /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001A000000000000A001 /* NotificationServiceTests.swift */; };
 		A100001B000000000000A001 /* HotKeyControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100001B000000000000A001 /* HotKeyControllerTests.swift */; };
-		A1000012000000000000A00C /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00C /* WindowController.swift */; };
-		A1000012000000000000A00D /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00D /* MenuBuilder.swift */; };
-		A1000012000000000000A00E /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00E /* NotificationService.swift */; };
-		A1000012000000000000A00F /* HotKeyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00F /* HotKeyController.swift */; };
-		A1000012000000000000A010 /* StatusPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A010 /* StatusPanelController.swift */; };
-		A1000012000000000000A011 /* ActiveStateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A011 /* ActiveStateController.swift */; };
-		A1000012000000000000A008 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A008 /* KeychainService.swift */; };
-		A1000012000000000000A009 /* AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A009 /* AIService.swift */; };
-		A1000012000000000000A00A /* LetterToThemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A00A /* LetterToThemView.swift */; };
+		A1000012000000000000A016 /* WorthAffirmations.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A016 /* WorthAffirmations.swift */; };
+		A1000012000000000000A017 /* WorthAffirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000012000000000000A017 /* WorthAffirmationView.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		H0000003000000000000A001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = H0000001000000000000A001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E0000001000000000000A001;
+			remoteInfo = MissingPlusPlus;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		B0000001000000000000A001 /* MissingPlusPlus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MissingPlusPlus.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -74,6 +87,7 @@
 		B000002200000000000A001 /* AppIcon-delighted.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-delighted.icns"; sourceTree = "<group>"; };
 		B000002300000000000A001 /* AppIcon-sad.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-sad.icns"; sourceTree = "<group>"; };
 		B000002400000000000A001 /* AppIcon-longing.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "AppIcon-longing.icns"; sourceTree = "<group>"; };
+		B0000050000000000000A001 /* MissingPlusPlusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MissingPlusPlusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1000001000000000000A001 /* MissingPlusPlusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingPlusPlusApp.swift; sourceTree = "<group>"; };
 		B1000002000000000000A001 /* Missing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Missing.swift; sourceTree = "<group>"; };
 		B1000003000000000000A001 /* Mood.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mood.swift; sourceTree = "<group>"; };
@@ -81,8 +95,8 @@
 		B1000005000000000000A001 /* MissingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingStore.swift; sourceTree = "<group>"; };
 		B1000007000000000000A001 /* MenuBarContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarContent.swift; sourceTree = "<group>"; };
 		B1000008000000000000A001 /* NewMissingForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMissingForm.swift; sourceTree = "<group>"; };
-		B1000010000000000000A001 /* StorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageService.swift; sourceTree = "<group>"; };
 		B1000009000000000000A001 /* HistoryList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryList.swift; sourceTree = "<group>"; };
+		B1000010000000000000A001 /* StorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageService.swift; sourceTree = "<group>"; };
 		B1000011000000000000A001 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		B1000012000000000000A001 /* MenuBarIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconRenderer.swift; sourceTree = "<group>"; };
 		B1000012000000000000A002 /* TriggerTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriggerTag.swift; sourceTree = "<group>"; };
@@ -91,23 +105,25 @@
 		B1000012000000000000A005 /* GroundingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroundingSheet.swift; sourceTree = "<group>"; };
 		B1000012000000000000A006 /* SelfCompassionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfCompassionView.swift; sourceTree = "<group>"; };
 		B1000012000000000000A007 /* CooldownSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CooldownSheet.swift; sourceTree = "<group>"; };
-		B1000012000000000000A00B /* StatusItemPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemPanel.swift; sourceTree = "<group>"; };
+		B1000012000000000000A008 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		B1000012000000000000A009 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
+		B1000012000000000000A00A /* LetterToThemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterToThemView.swift; sourceTree = "<group>"; };
 		B1000012000000000000A00C /* WindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowController.swift; sourceTree = "<group>"; };
+		B1000012000000000000A015 /* StatusItemPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemPanel.swift; sourceTree = "<group>"; };
 		B1000012000000000000A00D /* MenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilder.swift; sourceTree = "<group>"; };
+		B1000012000000000000A013 /* StatusItemProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemProvider.swift; sourceTree = "<group>"; };
 		B1000012000000000000A00E /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		B1000012000000000000A00F /* HotKeyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyController.swift; sourceTree = "<group>"; };
 		B1000012000000000000A010 /* StatusPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPanelController.swift; sourceTree = "<group>"; };
 		B1000012000000000000A011 /* ActiveStateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveStateController.swift; sourceTree = "<group>"; };
-		B1000012000000000000A008 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
-		B1000012000000000000A009 /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
-		B1000012000000000000A00A /* LetterToThemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterToThemView.swift; sourceTree = "<group>"; };
 		B1000013000000000000A001 /* ActiveStateControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveStateControllerTests.swift; sourceTree = "<group>"; };
 		B1000014000000000000A001 /* MenuBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilderTests.swift; sourceTree = "<group>"; };
 		B1000015000000000000A001 /* WindowControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowControllerTests.swift; sourceTree = "<group>"; };
 		B1000019000000000000A001 /* StatusPanelControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPanelControllerTests.swift; sourceTree = "<group>"; };
 		B100001A000000000000A001 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		B100001B000000000000A001 /* HotKeyControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyControllerTests.swift; sourceTree = "<group>"; };
-		B0000050000000000000A001 /* MissingPlusPlusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MissingPlusPlusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1000012000000000000A016 /* WorthAffirmations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorthAffirmations.swift; sourceTree = "<group>"; };
+		B1000012000000000000A017 /* WorthAffirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorthAffirmationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,7 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				D0000008000000000000A001 /* StatusBar */,
-			D0000009000000000000A001 /* Windows */,
+				D0000009000000000000A001 /* Windows */,
 				D0000007000000000000A001 /* Resources */,
 				B1000001000000000000A001 /* MissingPlusPlusApp.swift */,
 				D0000004000000000000A001 /* Models */,
@@ -168,8 +184,9 @@
 				B1000002000000000000A001 /* Missing.swift */,
 				B1000003000000000000A001 /* Mood.swift */,
 				B1000004000000000000A001 /* Intensity.swift */,
-			B1000012000000000000A002 /* TriggerTag.swift */,
-			B1000012000000000000A004 /* CooldownActivities.swift */,
+				B1000012000000000000A002 /* TriggerTag.swift */,
+				B1000012000000000000A004 /* CooldownActivities.swift */,
+				B1000012000000000000A016 /* WorthAffirmations.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -181,11 +198,11 @@
 				B1000010000000000000A001 /* StorageService.swift */,
 				B1000011000000000000A001 /* AppPreferences.swift */,
 				B1000012000000000000A001 /* MenuBarIconRenderer.swift */,
-			B1000012000000000000A008 /* KeychainService.swift */,
-			B1000012000000000000A009 /* AIService.swift */,
-			B1000012000000000000A00E /* NotificationService.swift */,
-			B1000012000000000000A00F /* HotKeyController.swift */,
-			B1000012000000000000A011 /* ActiveStateController.swift */,
+				B1000012000000000000A008 /* KeychainService.swift */,
+				B1000012000000000000A009 /* AIService.swift */,
+				B1000012000000000000A00E /* NotificationService.swift */,
+				B1000012000000000000A00F /* HotKeyController.swift */,
+				B1000012000000000000A011 /* ActiveStateController.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -198,31 +215,14 @@
 				B1000008000000000000A001 /* NewMissingForm.swift */,
 				B1000009000000000000A001 /* HistoryList.swift */,
 				B000001700000000000A001 /* SettingsView.swift */,
-			B1000012000000000000A003 /* RealityCheckSheet.swift */,
-			B1000012000000000000A005 /* GroundingSheet.swift */,
-			B1000012000000000000A006 /* SelfCompassionView.swift */,
-			B1000012000000000000A007 /* CooldownSheet.swift */,
-			B1000012000000000000A00A /* LetterToThemView.swift */,
+				B1000012000000000000A003 /* RealityCheckSheet.swift */,
+				B1000012000000000000A005 /* GroundingSheet.swift */,
+				B1000012000000000000A006 /* SelfCompassionView.swift */,
+				B1000012000000000000A007 /* CooldownSheet.swift */,
+				B1000012000000000000A00A /* LetterToThemView.swift */,
+				B1000012000000000000A017 /* WorthAffirmationView.swift */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		D0000008000000000000A001 /* StatusBar */ = {
-			isa = PBXGroup;
-			children = (
-				B1000012000000000000A00B /* StatusItemPanel.swift */,
-				B1000012000000000000A00D /* MenuBuilder.swift */,
-				B1000012000000000000A010 /* StatusPanelController.swift */,
-			);
-			path = StatusBar;
-			sourceTree = "<group>";
-		};
-		D0000009000000000000A001 /* Windows */ = {
-			isa = PBXGroup;
-			children = (
-				B1000012000000000000A00C /* WindowController.swift */,
-			);
-			path = Windows;
 			sourceTree = "<group>";
 		};
 		D0000007000000000000A001 /* Resources */ = {
@@ -245,11 +245,23 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		D000001000000000000A001 /* Assets.xcassets */ = {
+		D0000008000000000000A001 /* StatusBar */ = {
 			isa = PBXGroup;
 			children = (
+				B1000012000000000000A015 /* StatusItemPanel.swift */,
+				B1000012000000000000A00D /* MenuBuilder.swift */,
+				B1000012000000000000A013 /* StatusItemProvider.swift */,
+				B1000012000000000000A010 /* StatusPanelController.swift */,
 			);
-			path = Assets.xcassets;
+			path = StatusBar;
+			sourceTree = "<group>";
+		};
+		D0000009000000000000A001 /* Windows */ = {
+			isa = PBXGroup;
+			children = (
+				B1000012000000000000A00C /* WindowController.swift */,
+			);
+			path = Windows;
 			sourceTree = "<group>";
 		};
 		D000000A000000000000A001 /* MissingPlusPlusTests */ = {
@@ -263,6 +275,13 @@
 				B100001B000000000000A001 /* HotKeyControllerTests.swift */,
 			);
 			path = MissingPlusPlusTests;
+			sourceTree = "<group>";
+		};
+		D000001000000000000A001 /* Assets.xcassets */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Assets.xcassets;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -303,24 +322,6 @@
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
-
-/* Begin PBXContainerItemProxy section */
-		H0000003000000000000A001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = H0000001000000000000A001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E0000001000000000000A001;
-			remoteInfo = MissingPlusPlus;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		H0000002000000000000A001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E0000001000000000000A001 /* MissingPlusPlus */;
-			targetProxy = H0000003000000000000A001 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		H0000001000000000000A001 /* Project object */ = {
@@ -395,22 +396,25 @@
 				A1000010000000000000A001 /* StorageService.swift in Sources */,
 				A1000011000000000000A001 /* AppPreferences.swift in Sources */,
 				A1000012000000000000A001 /* MenuBarIconRenderer.swift in Sources */,
-			A1000012000000000000A002 /* TriggerTag.swift in Sources */,
-			A1000012000000000000A003 /* RealityCheckSheet.swift in Sources */,
-			A1000012000000000000A004 /* CooldownActivities.swift in Sources */,
-			A1000012000000000000A005 /* GroundingSheet.swift in Sources */,
-			A1000012000000000000A006 /* SelfCompassionView.swift in Sources */,
-			A1000012000000000000A007 /* CooldownSheet.swift in Sources */,
-			A1000012000000000000A008 /* KeychainService.swift in Sources */,
-			A1000012000000000000A009 /* AIService.swift in Sources */,
-			A1000012000000000000A00A /* LetterToThemView.swift in Sources */,
-				A1000012000000000000A00B /* StatusItemPanel.swift in Sources */,
+				A1000012000000000000A002 /* TriggerTag.swift in Sources */,
+				A1000012000000000000A003 /* RealityCheckSheet.swift in Sources */,
+				A1000012000000000000A004 /* CooldownActivities.swift in Sources */,
+				A1000012000000000000A005 /* GroundingSheet.swift in Sources */,
+				A1000012000000000000A006 /* SelfCompassionView.swift in Sources */,
+				A1000012000000000000A007 /* CooldownSheet.swift in Sources */,
+				A1000012000000000000A008 /* KeychainService.swift in Sources */,
+				A1000012000000000000A009 /* AIService.swift in Sources */,
+				A1000012000000000000A00A /* LetterToThemView.swift in Sources */,
 				A1000012000000000000A00C /* WindowController.swift in Sources */,
 				A1000012000000000000A00D /* MenuBuilder.swift in Sources */,
 				A1000012000000000000A00E /* NotificationService.swift in Sources */,
 				A1000012000000000000A00F /* HotKeyController.swift in Sources */,
+				A1000012000000000000A015 /* StatusItemPanel.swift in Sources */,
 				A1000012000000000000A010 /* StatusPanelController.swift in Sources */,
+				A1000012000000000000A013 /* StatusItemProvider.swift in Sources */,
 				A1000012000000000000A011 /* ActiveStateController.swift in Sources */,
+				A1000012000000000000A016 /* WorthAffirmations.swift in Sources */,
+				A1000012000000000000A017 /* WorthAffirmationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -428,6 +432,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		H0000002000000000000A001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E0000001000000000000A001 /* MissingPlusPlus */;
+			targetProxy = H0000003000000000000A001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		I0000001000000000000A001 /* Debug */ = {
@@ -555,8 +567,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MissingPlusPlus/MissingPlusPlus.entitlements;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = MissingPlusPlus/MissingPlusPlus.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -584,8 +596,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MissingPlusPlus/MissingPlusPlus.entitlements;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = MissingPlusPlus/MissingPlusPlus.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;

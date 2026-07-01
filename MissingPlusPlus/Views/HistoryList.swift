@@ -10,6 +10,7 @@ struct HistoryList: View {
     /// v1.x self-soothing: 3 个 sub-sheet 入口
     @State private var pendingGrounding: Missing?
     @State private var pendingCompassion: Missing?
+    @State private var pendingWorthAffirmation: Missing?
     @State private var pendingCooldown: Missing?
 
     private var filtered: [Missing] {
@@ -133,6 +134,7 @@ struct HistoryList: View {
                                     onRequestCheck: { pendingRealityCheck = missing },
                                     onRequestGrounding: { pendingGrounding = missing },
                                     onRequestCompassion: { pendingCompassion = missing },
+                                    onRequestWorth: { pendingWorthAffirmation = missing },
                                     onRequestCooldown: { pendingCooldown = missing }
                                 )
                                 Divider().padding(.leading, 40)
@@ -168,6 +170,7 @@ struct HistoryList: View {
         }
         .sheet(item: $pendingGrounding) { _ in GroundingSheet() }
         .sheet(item: $pendingCompassion) { record in SelfCompassionView(missing: record) }
+        .sheet(item: $pendingWorthAffirmation) { _ in WorthAffirmationView() }
         .sheet(item: $pendingCooldown) { _ in CooldownSheet(prefs: AppPreferences.shared) }
     }
 
@@ -194,6 +197,7 @@ private struct HistoryRow: View {
     let onRequestCheck: () -> Void
     let onRequestGrounding: () -> Void
     let onRequestCompassion: () -> Void
+    let onRequestWorth: () -> Void
     let onRequestCooldown: () -> Void
 
     var body: some View {
@@ -224,7 +228,7 @@ private struct HistoryRow: View {
                     if item.realityCheck == nil {
                         Button(action: onRequestCheck) {
                             Image(systemName: "checkmark.bubble")
-                                .font(.callout)
+                                .font(.caption)
                         }
                         .buttonStyle(.borderless)
                         .foregroundColor(.purple)
@@ -232,21 +236,28 @@ private struct HistoryRow: View {
                     }
                     Button(action: onRequestGrounding) {
                         Image(systemName: "eye")
-                            .font(.callout)
+                            .font(.caption)
                     }
                     .buttonStyle(.borderless)
                     .foregroundColor(.blue)
                     .help("5-4-3-2-1 grounding")
                     Button(action: onRequestCompassion) {
                         Image(systemName: "heart.text.square")
-                            .font(.callout)
+                            .font(.caption)
                     }
                     .buttonStyle(.borderless)
                     .foregroundColor(.pink)
                     .help("自我同情")
+                    Button(action: onRequestWorth) {
+                        Image(systemName: "heart.circle.fill")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundColor(.green)
+                    .help("自己值得被爱")
                     Button(action: onRequestCooldown) {
                         Image(systemName: "shuffle")
-                            .font(.callout)
+                            .font(.caption)
                     }
                     .buttonStyle(.borderless)
                     .foregroundColor(.purple)
