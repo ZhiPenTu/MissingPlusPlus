@@ -121,7 +121,7 @@ struct UpdateBanner: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("v\(version) 已下载")
                     .font(.subheadline.weight(.medium))
-                Text("点击「立即安装」打开 DMG,把 .app 拖到 Applications 替换。")
+                Text("点击「立即安装」自动退出并打开 DMG,把 .app 拖到 Applications 替换。")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
