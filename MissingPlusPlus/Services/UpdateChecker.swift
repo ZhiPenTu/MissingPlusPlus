@@ -99,7 +99,24 @@ final class UpdateChecker {
             return .failed(reason: "已在设置中关闭")
         }
         checkLock.lock(); defer { checkLock.unlock() }
-        return await performCheck()
+        let result = await performCheck()
+        // 所有 check 路径 (5s 后台 / 状态栏 / Settings) 都 post .didFindRemoteUpdate,
+        // AppDelegate 接力 .showUpdateBanner → MenuBarContent 挂 banner。
+        if case .updateAvailable(let version, let htmlURL, let assetURL, let sizeBytes) = result {
+            NSLog("[MissingPlusPlus] checkNow: posting .didFindRemoteUpdate for v%@ (assetURL=%@, sizeBytes=%@)",
+                  version, assetURL?.absoluteString ?? "nil", sizeBytes.map(String.init) ?? "nil")
+            var info: [String: Any] = ["version": version, "htmlURL": htmlURL]
+            if let assetURL { info["assetURL"] = assetURL }
+            if let sizeBytes { info["sizeBytes"] = sizeBytes }
+            NotificationCenter.default.post(
+                name: .didFindRemoteUpdate,
+                object: self,
+                userInfo: info
+            )
+        } else {
+            NSLog("[MissingPlusPlus] checkNow: result = %@ (no banner)", String(describing: result))
+        }
+        return result
     }
 
     // MARK: - Private
@@ -109,7 +126,7 @@ final class UpdateChecker {
 
         do {
             var request = URLRequest(url: githubURL)
-            request.setValue("MissingPlusPlus/0.0.18 (build 9) (macOS)", forHTTPHeaderField: "User-Agent")
+            request.setValue("MissingPlusPlus/0.0.19 (build 10) (macOS)", forHTTPHeaderField: "User-Agent")
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
             let (data, response) = try await session.data(from: githubURL)

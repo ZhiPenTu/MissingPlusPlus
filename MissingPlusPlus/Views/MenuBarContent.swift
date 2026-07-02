@@ -111,11 +111,22 @@ struct MenuBarContent: View {
         }
         .frame(width: 360, height: 720)
         .onReceive(NotificationCenter.default.publisher(for: .showUpdateBanner)) { note in
+            NSLog("[MissingPlusPlus] MenuBarContent: .showUpdateBanner received")
             guard let version = note.userInfo?["version"] as? String,
                   let htmlURL = note.userInfo?["htmlURL"] as? URL,
-                  let assetURL = note.userInfo?["assetURL"] as? URL else { return }
+                  let assetURL = note.userInfo?["assetURL"] as? URL else {
+                NSLog("[MissingPlusPlus] MenuBarContent: missing userInfo keys")
+                return
+            }
+            NSLog("[MissingPlusPlus] MenuBarContent: v%@, lastDismissedVersion=%@, current updateState=%@",
+                   version,
+                   AppPreferences.shared.lastDismissedVersion ?? "nil",
+                   updateState == nil ? "nil" : "set(v\(updateState!.version))")
             // 同版本已 dismiss 过 → 不重弹
-            if AppPreferences.shared.lastDismissedVersion == version { return }
+            if AppPreferences.shared.lastDismissedVersion == version {
+                NSLog("[MissingPlusPlus] MenuBarContent: SKIP banner (lastDismissedVersion match)")
+                return
+            }
             let sizeBytes = note.userInfo?["sizeBytes"] as? Int
             let sizeMB = sizeBytes.map { Double($0) / 1024.0 / 1024.0 }
             withAnimation {
@@ -128,6 +139,7 @@ struct MenuBarContent: View {
                     progress: 0
                 )
             }
+            NSLog("[MissingPlusPlus] MenuBarContent: updateState set, body should re-render with banner")
         }
         .onReceive(NotificationCenter.default.publisher(for: .updateDownloadProgress)) { note in
             guard let progress = note.userInfo?["progress"] as? Double else { return }

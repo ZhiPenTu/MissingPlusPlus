@@ -149,7 +149,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func handleRemoteUpdateFound(_ note: Notification) {
         guard let version = note.userInfo?["version"] as? String,
               let htmlURL = note.userInfo?["htmlURL"] as? URL,
-              let assetURL = note.userInfo?["assetURL"] as? URL else { return }
+              let assetURL = note.userInfo?["assetURL"] as? URL else {
+            NSLog("[MissingPlusPlus] handleRemoteUpdateFound: missing userInfo keys, skip")
+            return
+        }
+        NSLog("[MissingPlusPlus] handleRemoteUpdateFound: v%@, calling showMainWindow…", version)
         // 1. 拉主窗口到前
         windowController.showMainWindow()
         // 2. 二级派发,让 MenuBarContent 挂 banner
@@ -165,6 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ]
         if let sizeBytes { userInfo["sizeBytes"] = sizeBytes }
         DispatchQueue.main.async {
+            NSLog("[MissingPlusPlus] handleRemoteUpdateFound: posting .showUpdateBanner for v%@", version)
             NotificationCenter.default.post(
                 name: .showUpdateBanner,
                 object: nil,
