@@ -235,6 +235,13 @@ final class AppPreferences: ObservableObject {
                 _cachedAIKey = loaded
                 NSLog("[AppPreferences] aiAPIKey lazy-load: keychain returned %@",
                       loaded != nil ? "present" : "nil (locked or not set)")
+                // Migration: v0.0.23 -> v0.0.24 升级场景。旧版没设 hasAIKey
+                // flag,如果 keychain 里其实有 key,把 flag 修正过来,避免
+                // aiIsConfigured 一直返 false 导致 Settings 显示"未配置"。
+                if loaded != nil && !hasAIKey {
+                    NSLog("[AppPreferences] aiAPIKey lazy-load: migrating hasAIKey flag false->true")
+                    hasAIKey = true
+                }
             }
             return _cachedAIKey
         }
