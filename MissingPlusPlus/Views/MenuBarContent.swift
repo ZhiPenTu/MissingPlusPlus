@@ -67,7 +67,12 @@ struct MenuBarContent: View {
                         withAnimation { updateState = nil }
                     },
                     onStartDownload: { assetURL in
-                        UpdateDownloader.shared.download(from: assetURL)
+                        // 推荐文件名 (如 MissingPlusPlus-0.0.20.dmg),NSSavePanel 默认
+                        let filename = "MissingPlusPlus-\(state.version).dmg"
+                        UpdateDownloader.shared.startDownload(
+                            assetURL: assetURL,
+                            suggestedFilename: filename
+                        )
                     },
                     onInstall: { localURL in
                         UpdateInstaller.openDMG(at: localURL)
