@@ -16,11 +16,65 @@ enum PopoverTab: String, CaseIterable, Identifiable {
 struct MenuBarContent: View {
     @ObservedObject var store: MissingStore
     @State private var tab: PopoverTab = .newEntry
-    @State private var updateBanner: (version: String, url: URL)?
-    @State private var bannerVisible: Bool = false
+
+    /// Update banner state — nil = hidden. Driven by .showUpdateBanner /
+    /// .updateDownloadProgress / .updateDownloadComplete notifications
+    /// from AppDelegate + UpdateDownloader.
+    @State private var updateState: UpdateState?
+
+    /// 当前 "update context" — 包含 version / htmlURL / assetURL / sizeMB /
+    /// localURL / progress。banner body 从这算 UpdateBannerState。
+    struct UpdateState {
+        let version: String
+        let htmlURL: URL
+        let assetURL: URL
+        let sizeMB: Double?
+        var localURL: URL?
+        var progress: Double
+
+        var bannerState: UpdateBannerState {
+            if let local = localURL {
+                return .downloaded(
+                    version: version,
+                    htmlURL: htmlURL,
+                    assetURL: assetURL,
+                    localURL: local
+                )
+            }
+            if progress > 0 {
+                return .downloading(version: version, progress: progress)
+            }
+            return .available(
+                version: version,
+                sizeMB: sizeMB,
+                htmlURL: htmlURL,
+                assetURL: assetURL
+            )
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
+            if let state = updateState {
+                UpdateBanner(
+                    state: state.bannerState,
+                    onDismiss: {
+                        AppPreferences.shared.lastDismissedVersion = state.version
+                        // 如果在下载中,取消下载
+                        if case .downloading = state.bannerState {
+                            UpdateDownloader.shared.cancel()
+                        }
+                        withAnimation { updateState = nil }
+                    },
+                    onStartDownload: { assetURL in
+                        UpdateDownloader.shared.download(from: assetURL)
+                    },
+                    onInstall: { localURL in
+                        UpdateInstaller.openDMG(at: localURL)
+                        withAnimation { updateState = nil }
+                    }
+                )
+            }
             tabBar
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -58,13 +112,37 @@ struct MenuBarContent: View {
         .frame(width: 360, height: 720)
         .onReceive(NotificationCenter.default.publisher(for: .showUpdateBanner)) { note in
             guard let version = note.userInfo?["version"] as? String,
-                  let url = note.userInfo?["url"] as? URL else { return }
+                  let htmlURL = note.userInfo?["htmlURL"] as? URL,
+                  let assetURL = note.userInfo?["assetURL"] as? URL else { return }
             // 同版本已 dismiss 过 → 不重弹
             if AppPreferences.shared.lastDismissedVersion == version { return }
+            let sizeBytes = note.userInfo?["sizeBytes"] as? Int
+            let sizeMB = sizeBytes.map { Double($0) / 1024.0 / 1024.0 }
             withAnimation {
-                updateBanner = (version, url)
-                bannerVisible = true
+                updateState = UpdateState(
+                    version: version,
+                    htmlURL: htmlURL,
+                    assetURL: assetURL,
+                    sizeMB: sizeMB,
+                    localURL: nil,
+                    progress: 0
+                )
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .updateDownloadProgress)) { note in
+            guard let progress = note.userInfo?["progress"] as? Double else { return }
+            guard updateState != nil else { return }
+            withAnimation { updateState?.progress = progress }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .updateDownloadComplete)) { note in
+            guard let localURL = note.userInfo?["localURL"] as? URL else { return }
+            guard updateState != nil else { return }
+            withAnimation { updateState?.localURL = localURL }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .updateDownloadError)) { note in
+            // 失败 → 退到 available 状态 (progress=0),用户可以重试下载
+            guard updateState != nil else { return }
+            withAnimation { updateState?.progress = 0 }
         }
     }
 
@@ -99,5 +177,3 @@ struct MenuBarContent: View {
         )
     }
 }
-
-

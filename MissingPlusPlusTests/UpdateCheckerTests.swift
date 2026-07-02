@@ -78,10 +78,33 @@ final class UpdateCheckerTests: XCTestCase {
 
     func test_performCheck_updateAvailable() async {
         // GitHub stub returns v0.0.99 which is way above any local version
+        stubGitHubWithAssets(
+            tag: "v0.0.99",
+            htmlURL: "https://github.com/ZhiPenTu/MissingPlusPlus/releases/tag/v0.0.99",
+            assetName: "MissingPlusPlus-0.0.99.dmg",
+            assetURL: "https://github.com/ZhiPenTu/MissingPlusPlus/releases/download/v0.0.99/MissingPlusPlus-0.0.99.dmg",
+            assetSize: 2_500_268
+        )
+        let result = await makeChecker().checkNow()
+        XCTAssertEqual(result, .updateAvailable(
+            version: "0.0.99",
+            htmlURL: URL(string: "https://github.com/ZhiPenTu/MissingPlusPlus/releases/tag/v0.0.99")!,
+            assetURL: URL(string: "https://github.com/ZhiPenTu/MissingPlusPlus/releases/download/v0.0.99/MissingPlusPlus-0.0.99.dmg")!,
+            sizeBytes: 2_500_268
+        ))
+    }
+
+    /// Release 有 html_url 但没有 .dmg asset (e.g. source-only release)
+    /// → assetURL = nil, sizeBytes = nil, banner 只显示 '稍后 / 查看'
+    func test_performCheck_updateAvailableWithoutDmgAsset() async {
         stubGitHub(tag: "v0.0.99", url: "https://github.com/ZhiPenTu/MissingPlusPlus/releases/tag/v0.0.99")
         let result = await makeChecker().checkNow()
-        XCTAssertEqual(result, .updateAvailable(version: "0.0.99",
-                                                url: URL(string: "https://github.com/ZhiPenTu/MissingPlusPlus/releases/tag/v0.0.99")!))
+        XCTAssertEqual(result, .updateAvailable(
+            version: "0.0.99",
+            htmlURL: URL(string: "https://github.com/ZhiPenTu/MissingPlusPlus/releases/tag/v0.0.99")!,
+            assetURL: nil,
+            sizeBytes: nil
+        ))
     }
 
     func test_performCheck_callDoesNotFail() async {
@@ -111,6 +134,27 @@ final class UpdateCheckerTests: XCTestCase {
 
     private func stubGitHub(tag: String, url: String) {
         let json: [String: Any] = ["tag_name": tag, "html_url": url]
+        mockSession.stubbedData = try! JSONSerialization.data(withJSONObject: json)
+    }
+
+    private func stubGitHubWithAssets(
+        tag: String,
+        htmlURL: String,
+        assetName: String,
+        assetURL: String,
+        assetSize: Int
+    ) {
+        let json: [String: Any] = [
+            "tag_name": tag,
+            "html_url": htmlURL,
+            "assets": [
+                [
+                    "name": assetName,
+                    "browser_download_url": assetURL,
+                    "size": assetSize
+                ]
+            ]
+        ]
         mockSession.stubbedData = try! JSONSerialization.data(withJSONObject: json)
     }
 

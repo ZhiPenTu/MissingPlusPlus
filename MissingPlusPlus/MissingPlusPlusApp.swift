@@ -115,6 +115,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .didFindRemoteUpdate,
             object: nil
         )
+
+        // Wire up UpdateDownloader callbacks to post progress/complete/error
+        setupUpdateDownloaderCallbacks()
     }
 
     // MARK: - Dock 点击
@@ -145,7 +148,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func handleRemoteUpdateFound(_ note: Notification) {
         guard let version = note.userInfo?["version"] as? String,
-              let url = note.userInfo?["url"] as? URL else { return }
+              let htmlURL = note.userInfo?["htmlURL"] as? URL,
+              let assetURL = note.userInfo?["assetURL"] as? URL else { return }
         // 1. 拉主窗口到前
         windowController.showMainWindow()
         // 2. 二级派发,让 MenuBarContent 挂 banner
@@ -153,11 +157,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // showMainWindow() 同步创建 NSWindow + NSHostingController,但 SwiftUI body
         // 还没求值 → MenuBarContent 的 .onReceive 没注册 → 通知丢失。
         // async 把 post 推到下一个 runloop,给 SwiftUI 时间设置订阅。
+        let sizeBytes = note.userInfo?["sizeBytes"] as? Int
+        var userInfo: [String: Any] = [
+            "version": version,
+            "htmlURL": htmlURL,
+            "assetURL": assetURL
+        ]
+        if let sizeBytes { userInfo["sizeBytes"] = sizeBytes }
         DispatchQueue.main.async {
             NotificationCenter.default.post(
                 name: .showUpdateBanner,
                 object: nil,
-                userInfo: ["version": version, "url": url]
+                userInfo: userInfo
+            )
+        }
+    }
+}
+
+// Wire up UpdateDownloader → post download progress / complete / error notifications
+extension AppDelegate {
+    func setupUpdateDownloaderCallbacks() {
+        UpdateDownloader.shared.onProgress = { progress in
+            NotificationCenter.default.post(
+                name: .updateDownloadProgress,
+                object: nil,
+                userInfo: ["progress": progress]
+            )
+        }
+        UpdateDownloader.shared.onComplete = { localURL in
+            NotificationCenter.default.post(
+                name: .updateDownloadComplete,
+                object: nil,
+                userInfo: ["localURL": localURL]
+            )
+        }
+        UpdateDownloader.shared.onError = { error in
+            NotificationCenter.default.post(
+                name: .updateDownloadError,
+                object: nil,
+                userInfo: ["error": error.localizedDescription]
             )
         }
     }

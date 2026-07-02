@@ -245,12 +245,15 @@ struct SettingsView: View {
             alert.alertStyle = .informational
             alert.addButton(withTitle: "好")
             alert.runModal()
-        case .updateAvailable(let version, _):
-            // 用状态栏 "Check for Updates…" 走完整流程 (open URL + dismiss),
-            // 这里只 NSAlert 提示一下,UI 跟状态栏 item 一致
+        case .updateAvailable(let version, _, let assetURL, _):
+            // banner 已经在主窗口顶部挂了 (5s 后台检查触发),用户也会在
+            // 状态栏手动点 Check for Updates… 时拿到 NSAlert。这里 Settings
+            // 路径只 NSAlert 提示一下,UI 跟状态栏 item 一致。
             let alert = NSAlert()
             alert.messageText = "新版本 v\(version) 可用"
-            alert.informativeText = "用状态栏菜单的 'Check for Updates…' 跳到 release 页查看。"
+            alert.informativeText = assetURL == nil
+                ? "用状态栏菜单的 'Check for Updates…' 跳到 release 页查看。"
+                : "主窗口顶部 banner 可以点 '下载更新' 拉 DMG,或用状态栏菜单跳 release 页。"
             alert.alertStyle = .informational
             alert.addButton(withTitle: "好")
             alert.runModal()

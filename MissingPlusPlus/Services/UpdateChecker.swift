@@ -10,15 +10,40 @@ extension Notification.Name {
     static let didFindRemoteUpdate = Notification.Name("UpdateCheckerDidFindRemoteUpdate")
 
     /// Posted by `AppDelegate` after receiving `.didFindRemoteUpdate`. `MenuBarContent`
-    /// subscribes via `.onReceive` to mount the banner overlay. userInfo same as above.
+    /// subscribes via `.onReceive` to mount the banner overlay.
+    /// userInfo:
+    ///   "version": String
+    ///   "htmlURL": URL  (GitHub release page)
+    ///   "assetURL": URL? (DMG direct download, nil if release has no .dmg)
+    ///   "sizeBytes": Int? (DMG size for display)
     static let showUpdateBanner = Notification.Name("UpdateCheckerShowUpdateBanner")
+
+    /// Posted by `UpdateDownloader` during download. userInfo:
+    ///   "progress": Double (0.0 - 1.0)
+    static let updateDownloadProgress = Notification.Name("UpdateCheckerDownloadProgress")
+
+    /// Posted by `UpdateDownloader` on success. userInfo:
+    ///   "localURL": URL (path to downloaded DMG in app's container)
+    static let updateDownloadComplete = Notification.Name("UpdateCheckerDownloadComplete")
+
+    /// Posted by `UpdateDownloader` on failure. userInfo:
+    ///   "error": String (localizedDescription)
+    static let updateDownloadError = Notification.Name("UpdateCheckerDownloadError")
 }
 
 // MARK: - Result
 
 enum UpdateCheckResult: Equatable {
     case upToDate(localVersion: String)
-    case updateAvailable(version: String, url: URL)
+    /// `assetURL` 和 `sizeBytes` 是 release 自带的 .dmg 资产 (从 `assets[]` 取)。
+    /// 没有 .dmg 的 release (e.g. 只有 source code) 时 assetURL = nil,
+    /// banner 只显示 "稍后 / 查看",不显示 "下载"。
+    case updateAvailable(
+        version: String,
+        htmlURL: URL,
+        assetURL: URL?,
+        sizeBytes: Int?
+    )
     case failed(reason: String)
 }
 
@@ -84,7 +109,7 @@ final class UpdateChecker {
 
         do {
             var request = URLRequest(url: githubURL)
-            request.setValue("MissingPlusPlus/0.0.14 (build 5) (macOS)", forHTTPHeaderField: "User-Agent")
+            request.setValue("MissingPlusPlus/0.0.15 (build 6) (macOS)", forHTTPHeaderField: "User-Agent")
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
             let (data, response) = try await session.data(from: githubURL)
@@ -103,6 +128,13 @@ final class UpdateChecker {
                 return .failed(reason: "响应格式不符")
             }
 
+            // 找 .dmg 资产 (DMG browser_download_url + size for "下载 5.2 MB" UI)
+            let asset = (json["assets"] as? [[String: Any]] ?? []).first { entry in
+                (entry["name"] as? String)?.hasSuffix(".dmg") == true
+            }
+            let assetURL = (asset?["browser_download_url"] as? String).flatMap(URL.init(string:))
+            let sizeBytes = asset?["size"] as? Int
+
             // Skip prereleases (e.g. "v0.0.2-alpha")
             if tagName.contains("-") {
                 return .upToDate(localVersion: currentLocalVersion())
@@ -113,7 +145,12 @@ final class UpdateChecker {
 
             if Self.compareSemver(remote: remoteVersion, local: local) > 0 {
                 prefs.lastKnownRemoteVersion = remoteVersion
-                return .updateAvailable(version: remoteVersion, url: htmlURL)
+                return .updateAvailable(
+                    version: remoteVersion,
+                    htmlURL: htmlURL,
+                    assetURL: assetURL,
+                    sizeBytes: sizeBytes
+                )
             } else {
                 return .upToDate(localVersion: local)
             }
@@ -131,11 +168,14 @@ final class UpdateChecker {
     private func silentCheck() async {
         checkLock.lock(); defer { checkLock.unlock() }
         let result = await performCheck()
-        if case .updateAvailable(let version, let url) = result {
+        if case .updateAvailable(let version, let htmlURL, let assetURL, let sizeBytes) = result {
+            var info: [String: Any] = ["version": version, "htmlURL": htmlURL]
+            if let assetURL { info["assetURL"] = assetURL }
+            if let sizeBytes { info["sizeBytes"] = sizeBytes }
             NotificationCenter.default.post(
                 name: .didFindRemoteUpdate,
                 object: self,
-                userInfo: ["version": version, "url": url]
+                userInfo: info
             )
         }
     }

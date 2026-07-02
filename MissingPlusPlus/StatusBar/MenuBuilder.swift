@@ -217,9 +217,9 @@ private final class MenuActionRouter: NSObject {
             alert.alertStyle = .informational
             alert.addButton(withTitle: "好")
             alert.runModal()
-        case .updateAvailable(_, let url):
+        case .updateAvailable(_, let htmlURL, _, _):
             // 直接打开 release 页;banner 由 .didFindRemoteUpdate 自动挂上
-            NSWorkspace.shared.open(url)
+            NSWorkspace.shared.open(htmlURL)
         case .failed(let reason):
             let alert = NSAlert()
             alert.messageText = "检查更新失败"
