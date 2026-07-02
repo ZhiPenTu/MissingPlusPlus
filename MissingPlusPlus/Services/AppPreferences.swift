@@ -87,6 +87,18 @@ final class AppPreferences: ObservableObject {
         }
     }
 
+    /// 是否配过 AI API key (只存 flag,不存 key 本身)。key 仍在 Keychain,
+    /// 但 app 启动时不去碰它 —— 否则用户装新版本后第一次启动就会被
+    /// 弹 "登录钥匙串密码" (因为 keychain 处于 locked 状态)。
+    /// `aiIsConfigured` 用这个 flag 判断"是否已配",避免无谓地读 keychain。
+    /// `aiAPIKey` getter 是 lazy load,只在用户真要用 AI (测试连接 / 调
+    /// 用) 时才触发 keychain 读。`aiAPIKey` setter 同步更新 flag。
+    @Published var hasAIKey: Bool {
+        didSet {
+            defaults.set(hasAIKey, forKey: Keys.hasAIKey)
+        }
+    }
+
     /// AI 增强总开关。false → 走现有 hardcoded 文本（SelfCompassion 17 句 / 通知固定模板 / 3 封备选信）。
     @Published var aiEnabled: Bool {
         didSet {
@@ -130,7 +142,13 @@ final class AppPreferences: ObservableObject {
     /// auth dialog)。init 时一次性读取,setter 时同步写 Keychain。
     /// 这是单进程 app,key 只可能被本 app 写,缓存永远权威。
     /// (v0.0.21 fix: 用户每次打开 Settings 都弹"钥匙串验证"。)
+    /// (v0.0.24 fix: keychain 处于 locked 状态时 init 读 key 会
+    /// 弹"登录钥匙串密码"。改成 lazy: 第一次 getter 访问才读。)
     private var _cachedAIKey: String?
+    /// 是否已经尝试过 lazy load。getter 第一次访问时 = false,
+    /// 触发 keychain 读后 = true。setter 写 keychain 时也 = true
+    /// (避免 setter 后再 getter 又触发一次冗余读)。
+    private var _didTryLoadAIKey: Bool = false
 
     private let defaults: UserDefaults
     private enum Keys {
@@ -148,6 +166,7 @@ final class AppPreferences: ObservableObject {
         static let notificationIncludeTriggers = "NotificationIncludeTriggers"
         static let cooldownActivities = "CooldownActivities"
         static let worthConfirmations = "WorthConfirmations"
+        static let hasAIKey = "HasAIKey"
         static let updateCheckEnabled = "UpdateCheckEnabled"
         static let lastDismissedVersion = "UpdateCheckerLastDismissedVersion"
     }
@@ -168,6 +187,11 @@ final class AppPreferences: ObservableObject {
             defaults.stringArray(forKey: Keys.cooldownActivities) ?? []
         self.worthConfirmations =
             defaults.array(forKey: Keys.worthConfirmations) as? [Date] ?? []
+        // hasAIKey 反映"用户配过 key"。key 本身在 keychain 里,
+        // 但 init 不去读 —— 避免用户每次装新版本第一次启动就被弹
+        // "登录钥匙串密码" (keychain locked 时必弹)。
+        // lazy load 见 `aiAPIKey` getter。
+        self.hasAIKey = defaults.bool(forKey: Keys.hasAIKey)
         self.aiEnabled =
             defaults.object(forKey: Keys.aiEnabled) as? Bool ?? false
         self.aiBaseURL =
@@ -177,29 +201,53 @@ final class AppPreferences: ObservableObject {
         self.aiTemperature = defaults.object(forKey: Keys.aiTemperature) as? Double ?? 0.85
         self.aiMaxTokens = defaults.object(forKey: Keys.aiMaxTokens) as? Int ?? 200
         self.aiRequestTimeout = defaults.object(forKey: Keys.aiRequestTimeout) as? Double ?? 2.0
-        // 启动时一次性读 keychain,后续 getter 走内存缓存。
-        // ad-hoc 签名每个版本不同,keychain ACL "始终允许" 不持久,
-        // 缓存后 = 整个 app lifecycle 只弹一次 (启动时)。
-        self._cachedAIKey = KeychainService.shared.get(account: Self.aiKeychainAccount)
-        NSLog("[AppPreferences] init: _cachedAIKey populated from keychain (present=%@)",
-              self._cachedAIKey != nil ? "true" : "false")
+        // init 故意不读 keychain。懒加载见 aiAPIKey getter。
+        self._cachedAIKey = nil
+        self._didTryLoadAIKey = false
         self.updateCheckEnabled =
             defaults.object(forKey: Keys.updateCheckEnabled) as? Bool ?? true
         self.lastCheckedAt = nil  // transient
         self.lastKnownRemoteVersion = nil  // transient
         self.lastDismissedVersion =
             defaults.string(forKey: Keys.lastDismissedVersion)
+        // 所有 stored property 初始化完之后才能 log hasAIKey
+        // (Swift 严格检查 self 访问时机)。
+        NSLog("[AppPreferences] init: skipping keychain read (lazy); hasAIKey flag=%@",
+              self.hasAIKey ? "true" : "false")
     }
 
-    // MARK: - API key (Keychain, cached in memory)
+    // MARK: - API key (Keychain, lazy-loaded + cached in memory)
 
-    /// API key 存 Keychain + 内存缓存。getter 只读缓存 (不打 keychain);
-    /// setter 同时更新缓存和 keychain。详见 `_cachedAIKey` 注释。
+    /// Lazy load: getter 第一次访问时打 keychain,后续走 `_cachedAIKey` 缓存。
+    /// 这避免 init 时就触发 keychain 读 (keychain locked 时会弹"登录
+    /// 钥匙串密码" dialog,装新版本后第一次启动必中招)。
+    /// 真正的 keychain 访问时机:
+    ///  - 用户在 Settings 点"测试连接"
+    ///  - 用户实际调用 AI (通知 / self-compassion / 致 TA 的话)
+    ///  - 应用启动后第一次访问 `aiAPIKey`
+    /// setter 同步写 keychain + 更新 `hasAIKey` flag,这样后续 `aiIsConfigured`
+    /// 不用碰 keychain 就能判断"是否已配"。
     var aiAPIKey: String? {
-        get { _cachedAIKey }
+        get {
+            if !_didTryLoadAIKey {
+                _didTryLoadAIKey = true
+                let loaded = KeychainService.shared.get(account: Self.aiKeychainAccount)
+                _cachedAIKey = loaded
+                NSLog("[AppPreferences] aiAPIKey lazy-load: keychain returned %@",
+                      loaded != nil ? "present" : "nil (locked or not set)")
+            }
+            return _cachedAIKey
+        }
         set {
-            _cachedAIKey = newValue
-            if let v = newValue, !v.isEmpty {
+            _didTryLoadAIKey = true
+            let trimmed = (newValue ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            _cachedAIKey = trimmed.isEmpty ? nil : trimmed
+            // 同步 hasAIKey flag,避免 aiIsConfigured 再去碰 keychain
+            let newFlag = (_cachedAIKey != nil)
+            if newFlag != hasAIKey {
+                hasAIKey = newFlag
+            }
+            if let v = _cachedAIKey {
                 KeychainService.shared.set(v, account: Self.aiKeychainAccount)
             } else {
                 KeychainService.shared.delete(account: Self.aiKeychainAccount)
@@ -208,11 +256,14 @@ final class AppPreferences: ObservableObject {
     }
 
     /// AI 是否真的可用(开关 + 有 key + base url 非空)。Settings 显示状态灯用。
-    /// 读 `_cachedAIKey` 而不是走 getter,语义更清晰 ("我读的是缓存")。
+    /// 用 `hasAIKey` flag 而不是 `_cachedAIKey` —— 避免 SwiftUI body
+    /// 重渲时触发 lazy load 弹"登录钥匙串密码"。flag 在 setter 时同步
+    /// 更新,所以"用户配过 key"这个信息在 `aiIsConfigured` 这里无需碰
+    /// keychain 就准确。
     var aiIsConfigured: Bool {
         aiEnabled
             && !(aiBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            && !((_cachedAIKey ?? "").isEmpty)
+            && hasAIKey
     }
 }
 
