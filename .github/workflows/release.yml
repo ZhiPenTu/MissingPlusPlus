@@ -41,8 +41,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/DerivedData
-          key: deriveddata-release-${{ runner.os }}-${{ hashFiles('MissingPlusPlus.xcodeproj/project.pbxproj') }}
-          # pbxproj 改了 (新增文件 / 改 build setting) 缓存失效
+          # hash pbxproj + Info.plist (version 变了 → 缓存失效)。
+          # pbxproj hash 抓 "build 配置 / 新增文件" 变化;
+          # Info.plist hash 抓 "版本号" 变化 (v0.0.13 → v0.0.15 只动 Info.plist 不动 pbxproj,
+          # 不加 Info.plist 会 hit v0.0.13 的 cache → DMG 出来 Info.plist 还是 0.0.13)。
+          key: deriveddata-release-${{ runner.os }}-${{ hashFiles('MissingPlusPlus.xcodeproj/project.pbxproj', 'MissingPlusPlus/Info.plist') }}
           restore-keys: |
             deriveddata-release-${{ runner.os }}-
 
