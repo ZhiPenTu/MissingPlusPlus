@@ -60,8 +60,12 @@ final class UpdateDownloader: NSObject {
         let config = URLSessionConfiguration.default
         session = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue.main)
         task = session?.downloadTask(with: url)
-        // 把 dest URL 编码到 task description,delegate nonisolated 时用
-        task?.taskDescription = destURL.absoluteString
+        // 把 dest 路径塞到 task description 给 nonisolated delegate。
+        // 用 `destURL.path` (filesystem path, e.g. "/Users/foo/x.dmg")
+        // 不用 `absoluteString` (URL-encoded, e.g. "file%3A///Users/foo/x.dmg"
+        // — `:` 被 encode 成 `%3A`,delegate `URL(fileURLWithPath:)` 当
+        // 字面路径读会把 DMG 存到 `file%3A/...` 的奇怪位置)。
+        task?.taskDescription = destURL.path
         task?.resume()
     }
 
