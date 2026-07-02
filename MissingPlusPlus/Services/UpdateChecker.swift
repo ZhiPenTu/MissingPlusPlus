@@ -109,7 +109,7 @@ final class UpdateChecker {
 
         do {
             var request = URLRequest(url: githubURL)
-            request.setValue("MissingPlusPlus/0.0.16 (build 7) (macOS)", forHTTPHeaderField: "User-Agent")
+            request.setValue("MissingPlusPlus/0.0.17 (build 8) (macOS)", forHTTPHeaderField: "User-Agent")
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
             let (data, response) = try await session.data(from: githubURL)
@@ -166,18 +166,8 @@ final class UpdateChecker {
     }
 
     private func silentCheck() async {
-        checkLock.lock(); defer { checkLock.unlock() }
-        let result = await performCheck()
-        if case .updateAvailable(let version, let htmlURL, let assetURL, let sizeBytes) = result {
-            var info: [String: Any] = ["version": version, "htmlURL": htmlURL]
-            if let assetURL { info["assetURL"] = assetURL }
-            if let sizeBytes { info["sizeBytes"] = sizeBytes }
-            NotificationCenter.default.post(
-                name: .didFindRemoteUpdate,
-                object: self,
-                userInfo: info
-            )
-        }
+        // checkNow 内部已经会 post .didFindRemoteUpdate (统一所有路径)
+        _ = await checkNow()
     }
 
     private func currentLocalVersion() -> String {

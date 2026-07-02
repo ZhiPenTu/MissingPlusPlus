@@ -209,6 +209,11 @@ private final class MenuActionRouter: NSObject {
     }
 
     private static func presentResult(_ result: UpdateCheckResult) {
+        // upToDate / failed 走 NSAlert 反馈;updateAvailable 不弹 NSAlert
+        // 也不开浏览器 —— UpdateChecker.checkNow 已经 post .didFindRemoteUpdate,
+        // AppDelegate 接力 .showUpdateBanner,主窗口顶部挂 3 状态 banner
+        // (有 下载更新 ↓ 按钮,带进度条 + 立即安装)。"查看" 按钮在 banner
+        // 状态里,需要手动打开 release 页时点那里。
         switch result {
         case .upToDate(let local):
             let alert = NSAlert()
@@ -217,9 +222,8 @@ private final class MenuActionRouter: NSObject {
             alert.alertStyle = .informational
             alert.addButton(withTitle: "好")
             alert.runModal()
-        case .updateAvailable(_, let htmlURL, _, _):
-            // 直接打开 release 页;banner 由 .didFindRemoteUpdate 自动挂上
-            NSWorkspace.shared.open(htmlURL)
+        case .updateAvailable:
+            return  // banner 已经在挂了,这里什么都不做
         case .failed(let reason):
             let alert = NSAlert()
             alert.messageText = "检查更新失败"
