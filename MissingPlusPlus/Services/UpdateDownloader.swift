@@ -15,6 +15,11 @@ final class UpdateDownloader: NSObject {
     private var session: URLSession?
     private var task: URLSessionDownloadTask?
 
+    /// BUG FIX #10: 防止用户在 NSSavePanel 打开时重复点"下载"按钮触发
+    /// 第二次 beginDownload。startDownload 调用时设 true, panel 回调
+    /// (无论 OK 还是 cancel) 触发后清回 false。
+    private var isStartingDownload: Bool = false
+
     /// DMG 在用户选的位置 (via NSSavePanel)。通过 task.taskDescription 传给
     /// nonisolated delegate (避免跨 actor 访问 stored property)。
     private var destURL: URL?
@@ -26,7 +31,18 @@ final class UpdateDownloader: NSObject {
     /// 启动下载流程:弹 NSSavePanel → 用户选位置 → 开始下载。
     /// 用户取消 panel → 静默 return (banner 保持 available 状态,用户可重试)。
     /// 完成后通过 `onComplete(localURL)` 回调 (localURL = 用户选的位置)。
+    ///
+    /// BUG FIX #10: 二次点击守卫。Panel 弹着的时候用户再点"下载"
+    /// 会开第二个 panel,旧 panel 回调触发后还会启动已被覆盖的 session。
+    /// 这里用 isStartingDownload 串行化:有 panel / download 在进行中
+    /// 时直接 NSLog + 忽略。
     func startDownload(assetURL: URL, suggestedFilename: String) {
+        if isStartingDownload {
+            NSLog("[MissingPlusPlus] download: ignored re-entry (panel/download in flight)")
+            return
+        }
+        isStartingDownload = true
+
         let panel = NSSavePanel()
         panel.title = "保存更新"
         panel.message = "选择 DMG 保存位置。\n推荐 ~/Downloads,可避免打开时弹钥匙串验证。"
@@ -40,6 +56,9 @@ final class UpdateDownloader: NSObject {
         NSLog("[MissingPlusPlus] download: showing NSSavePanel")
         panel.begin { [weak self] response in
             guard let self = self else { return }
+            // 无论 OK 还是 cancel,这次 startDownload 流程结束,清 flag
+            // 让用户能重试。
+            self.isStartingDownload = false
             guard response == .OK, let dest = panel.url else {
                 NSLog("[MissingPlusPlus] download: user cancelled NSSavePanel, no error")
                 return
