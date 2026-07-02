@@ -125,6 +125,12 @@ final class AppPreferences: ObservableObject {
     }
     /// API key 不存在 UserDefaults，单独走 Keychain。account 名固定。
     static let aiKeychainAccount = "openai"
+    /// API key 内存缓存 —— `aiAPIKey` getter 走这里,避免每次
+    /// SwiftUI body 重新渲染都打 Keychain (会触发"钥匙串验证"
+    /// auth dialog)。init 时一次性读取,setter 时同步写 Keychain。
+    /// 这是单进程 app,key 只可能被本 app 写,缓存永远权威。
+    /// (v0.0.21 fix: 用户每次打开 Settings 都弹"钥匙串验证"。)
+    private var _cachedAIKey: String?
 
     private let defaults: UserDefaults
     private enum Keys {
@@ -171,6 +177,12 @@ final class AppPreferences: ObservableObject {
         self.aiTemperature = defaults.object(forKey: Keys.aiTemperature) as? Double ?? 0.85
         self.aiMaxTokens = defaults.object(forKey: Keys.aiMaxTokens) as? Int ?? 200
         self.aiRequestTimeout = defaults.object(forKey: Keys.aiRequestTimeout) as? Double ?? 2.0
+        // 启动时一次性读 keychain,后续 getter 走内存缓存。
+        // ad-hoc 签名每个版本不同,keychain ACL "始终允许" 不持久,
+        // 缓存后 = 整个 app lifecycle 只弹一次 (启动时)。
+        self._cachedAIKey = KeychainService.shared.get(account: Self.aiKeychainAccount)
+        NSLog("[AppPreferences] init: _cachedAIKey populated from keychain (present=%@)",
+              self._cachedAIKey != nil ? "true" : "false")
         self.updateCheckEnabled =
             defaults.object(forKey: Keys.updateCheckEnabled) as? Bool ?? true
         self.lastCheckedAt = nil  // transient
@@ -179,12 +191,14 @@ final class AppPreferences: ObservableObject {
             defaults.string(forKey: Keys.lastDismissedVersion)
     }
 
-    // MARK: - API key (Keychain)
+    // MARK: - API key (Keychain, cached in memory)
 
-    /// API key 存 Keychain，外部读写都走这里。
+    /// API key 存 Keychain + 内存缓存。getter 只读缓存 (不打 keychain);
+    /// setter 同时更新缓存和 keychain。详见 `_cachedAIKey` 注释。
     var aiAPIKey: String? {
-        get { KeychainService.shared.get(account: Self.aiKeychainAccount) }
+        get { _cachedAIKey }
         set {
+            _cachedAIKey = newValue
             if let v = newValue, !v.isEmpty {
                 KeychainService.shared.set(v, account: Self.aiKeychainAccount)
             } else {
@@ -193,11 +207,12 @@ final class AppPreferences: ObservableObject {
         }
     }
 
-    /// AI 是否真的可用（开关 + 有 key + base url 非空）。Settings 显示状态灯用。
+    /// AI 是否真的可用(开关 + 有 key + base url 非空)。Settings 显示状态灯用。
+    /// 读 `_cachedAIKey` 而不是走 getter,语义更清晰 ("我读的是缓存")。
     var aiIsConfigured: Bool {
         aiEnabled
             && !(aiBaseURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            && !((aiAPIKey ?? "").isEmpty)
+            && !((_cachedAIKey ?? "").isEmpty)
     }
 }
 
