@@ -31,8 +31,14 @@ struct MenuBarContent: View {
         let sizeMB: Double?
         var localURL: URL?
         var progress: Double
+        /// True after user clicks 立即安装, until app exits (1.5s).
+        /// Banner shows "正在准备安装…" spinner during this window.
+        var isInstalling: Bool = false
 
         var bannerState: UpdateBannerState {
+            if isInstalling {
+                return .installing(version: version)
+            }
             if let local = localURL {
                 return .downloaded(
                     version: version,
@@ -75,8 +81,13 @@ struct MenuBarContent: View {
                         )
                     },
                     onInstall: { localURL in
+                        // BUG FIX #7: 之前这里 `withAnimation { updateState = nil }`
+                        // 立刻把 banner 收掉,但 UpdateInstaller 要 1.5s 后才
+                        // exit(0)。这 1.5s 用户盯着空 UI 不知道在干嘛,可能再
+                        // 点一次触发第二次 openDMG。改成切到 .installing 状态
+                        // 显示 spinner,exit(0) 之后进程自己消失,banner 跟着没。
+                        withAnimation { updateState?.isInstalling = true }
                         UpdateInstaller.openDMG(at: localURL)
-                        withAnimation { updateState = nil }
                     }
                 )
             }
