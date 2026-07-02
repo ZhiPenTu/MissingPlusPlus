@@ -126,7 +126,7 @@ final class UpdateChecker {
 
         do {
             var request = URLRequest(url: githubURL)
-            request.setValue("MissingPlusPlus/0.0.25 (build 16) (macOS)", forHTTPHeaderField: "User-Agent")
+            request.setValue("MissingPlusPlus/0.0.26 (build 17) (macOS)", forHTTPHeaderField: "User-Agent")
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
             let (data, response) = try await session.data(from: githubURL)
