@@ -231,16 +231,35 @@ final class AppPreferences: ObservableObject {
         get {
             if !_didTryLoadAIKey {
                 _didTryLoadAIKey = true
-                let loaded = KeychainService.shared.get(account: Self.aiKeychainAccount)
-                _cachedAIKey = loaded
-                NSLog("[AppPreferences] aiAPIKey lazy-load: keychain returned %@",
-                      loaded != nil ? "present" : "nil (locked or not set)")
-                // Migration: v0.0.23 -> v0.0.24 升级场景。旧版没设 hasAIKey
-                // flag,如果 keychain 里其实有 key,把 flag 修正过来,避免
-                // aiIsConfigured 一直返 false 导致 Settings 显示"未配置"。
-                if loaded != nil && !hasAIKey {
-                    NSLog("[AppPreferences] aiAPIKey lazy-load: migrating hasAIKey flag false->true")
-                    hasAIKey = true
+                let result = KeychainService.shared.get(account: Self.aiKeychainAccount)
+                switch result {
+                case .found(let v):
+                    _cachedAIKey = v
+                    NSLog("[AppPreferences] aiAPIKey lazy-load: found")
+                    // Migration: 旧版没设 hasAIKey flag,如果 keychain 里
+                    // 其实有 key,把 flag 修正过来。
+                    if !hasAIKey {
+                        NSLog("[AppPreferences] aiAPIKey lazy-load: migrating hasAIKey false->true")
+                        hasAIKey = true
+                    }
+                case .notFound:
+                    _cachedAIKey = nil
+                    NSLog("[AppPreferences] aiAPIKey lazy-load: notFound")
+                    // Keychain 真的没这条 entry (用户从 Keychain Access.app
+                    // 手动删了),hasAIKey 应该是 false。如果 flag 还 stale
+                    // true,把它修正过来,避免 aiIsConfigured 误报。
+                    if hasAIKey {
+                        NSLog("[AppPreferences] aiAPIKey lazy-load: correcting stale hasAIKey true->false")
+                        hasAIKey = false
+                    }
+                case .locked:
+                    // keychain 处于 locked 状态,可能只是临时的。hasAIKey
+                    // 不动 —— 用户解锁后再试,可能 lazy load 第二次就成功。
+                    _cachedAIKey = nil
+                    NSLog("[AppPreferences] aiAPIKey lazy-load: keychain locked, will retry on next read")
+                case .other(let status):
+                    _cachedAIKey = nil
+                    NSLog("[AppPreferences] aiAPIKey lazy-load: other error status=%d", status)
                 }
             }
             return _cachedAIKey
@@ -248,16 +267,26 @@ final class AppPreferences: ObservableObject {
         set {
             _didTryLoadAIKey = true
             let trimmed = (newValue ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            _cachedAIKey = trimmed.isEmpty ? nil : trimmed
+            let newKey: String? = trimmed.isEmpty ? nil : trimmed
+            _cachedAIKey = newKey
+            // 先写 keychain。如果失败 (e.g. keychain locked,errSecAuthFailed)
+            // 就回滚 hasAIKey flag,避免 in-memory 跟 keychain 不一致。
+            let writeSucceeded: Bool
+            if let v = newKey {
+                writeSucceeded = KeychainService.shared.set(v, account: Self.aiKeychainAccount)
+            } else {
+                writeSucceeded = KeychainService.shared.delete(account: Self.aiKeychainAccount)
+            }
+            if !writeSucceeded {
+                NSLog("[AppPreferences] aiAPIKey setter: keychain write/delete failed, rolling back in-memory state")
+                _cachedAIKey = nil  // 强制下次 lazy load 重新尝试
+                if hasAIKey { hasAIKey = false }
+                return  // 跳过 hasAIKey = true 那一步
+            }
             // 同步 hasAIKey flag,避免 aiIsConfigured 再去碰 keychain
-            let newFlag = (_cachedAIKey != nil)
+            let newFlag = (newKey != nil)
             if newFlag != hasAIKey {
                 hasAIKey = newFlag
-            }
-            if let v = _cachedAIKey {
-                KeychainService.shared.set(v, account: Self.aiKeychainAccount)
-            } else {
-                KeychainService.shared.delete(account: Self.aiKeychainAccount)
             }
         }
     }
