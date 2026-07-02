@@ -35,13 +35,7 @@ enum UpdateInstaller {
     static func openDMG(at url: URL) {
         NSLog("[UpdateInstaller] openDMG: %@", url.path)
 
-        // 1. escape 单引号 (路径里出现 ' 就 break shell)
-        let escapedPath = url.path.replacingOccurrences(of: "'", with: "'\\''")
-        // nohup: 让 child 忽略 SIGHUP (我们 exit 时会发);
-        // &: 后台执行,shell 立刻返回。
-        // 整体 ≈ "open in background, fully detached from us"
-        let script = "nohup /usr/bin/open '\(escapedPath)' >/dev/null 2>&1 &"
-
+        let script = detachedOpenScript(forDMG: url)
         let task = Process()
         task.launchPath = "/bin/sh"
         task.arguments = ["-c", script]
@@ -49,25 +43,42 @@ enum UpdateInstaller {
         do {
             try task.run()
             // shell 进程会立刻 exit (& 让它不等 child)。
-            // waitUntilExit 等到 shell 退出 (child open 此时已被 reparent
-            // 到 launchd,跟我们无关了)。
             task.waitUntilExit()
+            if task.terminationStatus != 0 {
+                // shell 启动成功但执行失败 (e.g. 路径含特殊字符, single quote escape 出错,
+                // /usr/bin/open 不存在)。fall back 到 NSWorkspace, 不退出,
+                // 让用户手动关 app 再拖。
+                NSLog("[UpdateInstaller] shell wrapper exit=%d, falling back to NSWorkspace.open",
+                      task.terminationStatus)
+                NSWorkspace.shared.open(url)
+                return
+            }
             NSLog("[UpdateInstaller] nohup wrapper exit=%d, DMG open should be in flight", task.terminationStatus)
         } catch {
-            NSLog("[UpdateInstaller] spawn /usr/bin/open failed: %@, falling back to NSWorkspace", error.localizedDescription)
+            NSLog("[UpdateInstaller] spawn /bin/sh failed: %@, falling back to NSWorkspace", error.localizedDescription)
             NSWorkspace.shared.open(url)
-            // 失败时不退出,让用户手动关 app 再拖
             return
         }
 
-        // 2. 给自己 1.5s 让 detached open 进程真的 exec 起来,
-        //    然后 exit(0) 强制退出 (不走 NSApp.terminate 的 graceful
-        //    路径,确保 process 在用户拖 .app 前真死)。
-        //    1.5s 是经验值:detached open 启动 + 用户从点"立即安装"
-        //    到反应"哦要点这里拖走"也差不多 1-2s。
+        // 给自己 1.5s 让 detached open 进程真的 exec 起来,
+        // 然后 exit(0) 强制退出 (不走 NSApp.terminate 的 graceful
+        // 路径,确保 process 在用户拖 .app 前真死)。
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             NSLog("[UpdateInstaller] exit(0) to release /Applications lock")
             exit(0)
         }
+    }
+
+    /// Build the nohup shell script that detaches `/usr/bin/open` from us.
+    /// Extracted from `openDMG` so we can unit-test the single-quote escape
+    /// (paths containing `'` would break the shell otherwise).
+    ///
+    /// - Returns: A shell script that can be passed to `/bin/sh -c`.
+    static func detachedOpenScript(forDMG url: URL) -> String {
+        // Standard single-quote escape: close quote, escaped quote, open quote.
+        // 'foo'\''bar'  ->  foo'bar  when shell parses it.
+        let escapedPath = url.path.replacingOccurrences(of: "'", with: "'\\''")
+        // nohup: 让 child 忽略 SIGHUP; &: 后台执行; shell 立刻返回。
+        return "nohup /usr/bin/open '\(escapedPath)' >/dev/null 2>&1 &"
     }
 }

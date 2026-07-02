@@ -63,6 +63,7 @@
 		A1000020000000000000A001 /* UpdateBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000020000000000000A001 /* UpdateBanner.swift */; };
 		A1000023000000000000A001 /* UpdateDownloaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000023000000000000A001 /* UpdateDownloaderTests.swift */; };
 		A1000024000000000000A001 /* AppPreferencesKeychainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000024000000000000A001 /* AppPreferencesKeychainTests.swift */; };
+		A1000025000000000000A001 /* UpdateInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000025000000000000A001 /* UpdateInstallerTests.swift */; };
 		A1000022000000000000A001 /* UpdateInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000022000000000000A001 /* UpdateInstaller.swift */; };
 		A1000021000000000000A001 /* UpdateDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000021000000000000A001 /* UpdateDownloader.swift */; };
 /* End PBXBuildFile section */
@@ -138,6 +139,7 @@
 		B1000020000000000000A001 /* UpdateBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateBanner.swift; sourceTree = "<group>"; };
 		B1000023000000000000A001 /* UpdateDownloaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateDownloaderTests.swift; sourceTree = "<group>"; };
 		B1000024000000000000A001 /* AppPreferencesKeychainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferencesKeychainTests.swift; sourceTree = "<group>"; };
+		B1000025000000000000A001 /* UpdateInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstallerTests.swift; sourceTree = "<group>"; };
 		B1000022000000000000A001 /* UpdateInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstaller.swift; sourceTree = "<group>"; };
 		B1000021000000000000A001 /* UpdateDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateDownloader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -296,6 +298,7 @@
 				B100001B000000000000A001 /* HotKeyControllerTests.swift */,
 				B1000023000000000000A001 /* UpdateDownloaderTests.swift */,
 				B1000024000000000000A001 /* AppPreferencesKeychainTests.swift */,
+				B1000025000000000000A001 /* UpdateInstallerTests.swift */,
 				B100001F000000000000A001 /* UpdateCheckerTests.swift */,
 			);
 			path = MissingPlusPlusTests;
@@ -459,6 +462,7 @@
 				A100001B000000000000A001 /* HotKeyControllerTests.swift in Sources */,
 				A1000023000000000000A001 /* UpdateDownloaderTests.swift in Sources */,
 				A1000024000000000000A001 /* AppPreferencesKeychainTests.swift in Sources */,
+				A1000025000000000000A001 /* UpdateInstallerTests.swift in Sources */,
 				A100001F000000000000A001 /* UpdateCheckerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
